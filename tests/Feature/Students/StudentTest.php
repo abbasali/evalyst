@@ -86,3 +86,28 @@ test('a CSV without the required headers is rejected', function () {
     $this->post(route('students.import.preview', $team), ['file' => $file])
         ->assertSessionHasErrors('file');
 });
+
+test('excel-style CSVs are parsed (BOM, quoted headers, CRLF, NBSP, Windows-1252)', function () {
+    [, $team] = actingAsInstructor();
+    Student::factory()->for($team)->create(['name' => 'Asha', 'roll_number' => 'CS-001', 'email' => null]);
+
+    $csv = "\xEF\xBB\xBF\"Name\",\"Roll No.\",\"Email ID\"\r\n\"Asha\",\"cs-001\u{A0}\",\"\"\r\n\r\n\"Zoë\",\"CS-002\",\"zoe@example.com\"\r\n";
+    $cp1252 = mb_convert_encoding("name,roll_number\nRené,CS-003\n", 'Windows-1252', 'UTF-8');
+
+    $preview = function (string $content) use ($team) {
+        $this->post(route('students.import.preview', $team), ['file' => UploadedFile::fake()->createWithContent('s.csv', $content)])
+            ->assertSessionHasNoErrors();
+
+        return session('inertia.flash_data.importPreview');
+    };
+
+    $rows = collect($preview($csv)['rows']);
+    expect($rows->pluck('status')->all())->toBe(['unchanged', 'new'])
+        ->and($rows->pluck('line')->all())->toBe([2, 4]);
+
+    $result = $preview($cp1252);
+    expect($result['rows'][0]['name'])->toBe('René');
+
+    $this->post(route('students.import.confirm', $team), ['token' => $result['token']])->assertSessionHasNoErrors();
+    expect($team->students()->where('roll_number', 'CS-003')->value('name'))->toBe('René');
+});
