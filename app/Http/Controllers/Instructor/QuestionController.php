@@ -16,6 +16,7 @@ use App\Models\Question;
 use App\Models\Tag;
 use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -69,7 +70,7 @@ class QuestionController extends Controller
                 'needs_verification' => (bool) ($filters['needs_verification'] ?? false),
                 'trashed' => (bool) ($filters['trashed'] ?? false),
             ],
-            'total' => $currentTeam->questions()->count(),
+            'total' => $currentTeam->questions()->withTrashed()->count(),
             ...$this->formOptions($currentTeam),
         ]);
     }
@@ -128,9 +129,9 @@ class QuestionController extends Controller
         return back();
     }
 
-    public function restore(Team $currentTeam, int $question): RedirectResponse
+    public function restore(Team $currentTeam, Question $question): RedirectResponse
     {
-        $currentTeam->questions()->onlyTrashed()->findOrFail($question)->restore();
+        $question->restore();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Question restored.')]);
 
@@ -158,17 +159,19 @@ class QuestionController extends Controller
             'tag_id' => ['required_unless:action,delete', 'nullable', 'integer', Rule::exists('tags', 'id')->where('team_id', $currentTeam->id)],
         ]);
 
-        $questions = $currentTeam->questions()->whereKey($data['ids'])->get();
+        $ids = $currentTeam->questions()->whereKey($data['ids'])->pluck('id');
 
-        foreach ($questions as $question) {
-            match ($request->string('action')->value()) {
-                'add_tag' => $question->tags()->syncWithoutDetaching([$data['tag_id']]),
-                'remove_tag' => $question->tags()->detach($data['tag_id']),
-                default => $question->delete(),
-            };
-        }
+        $count = DB::transaction(fn () => match ($request->string('action')->value()) {
+            // Questions already at the 10-tag limit are skipped.
+            'add_tag' => DB::table('question_tag')->insertOrIgnore(
+                $currentTeam->questions()->whereKey($ids)->has('tags', '<', 10)->pluck('id')
+                    ->map(fn (int $id) => ['question_id' => $id, 'tag_id' => $data['tag_id']])->all(),
+            ),
+            'remove_tag' => DB::table('question_tag')->whereIn('question_id', $ids)->where('tag_id', $data['tag_id'])->delete(),
+            default => $currentTeam->questions()->whereKey($ids)->get()->each->delete()->count(),
+        });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice(':count question updated.|:count questions updated.', $questions->count())]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice(':count question updated.|:count questions updated.', $count)]);
 
         return back();
     }

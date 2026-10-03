@@ -105,7 +105,9 @@ class Question extends Model
             ->when($filters['needs_verification'] ?? false, fn (Builder $query) => $query->where('needs_verification', true))
             ->when($filters['tags'] ?? [], fn (Builder $query, array $tags) => $query->whereHas('tags', fn (Builder $query) => $query->whereIn('tags.id', $tags)))
             ->when($filters['trashed'] ?? false, fn (Builder $query) => $query->onlyTrashed())
-            ->when(trim((string) ($filters['q'] ?? '')), fn (Builder $query, string $term) => $query->where('body', 'like', "%{$term}%"));
+            ->when(trim((string) ($filters['q'] ?? '')), fn (Builder $query, string $term) => $query->where(
+                'body', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%',
+            ));
     }
 
     /**

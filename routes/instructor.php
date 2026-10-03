@@ -23,8 +23,8 @@ Route::resource('students', StudentController::class)->only(['index', 'store', '
 
 Route::post('questions/bulk', [QuestionController::class, 'bulk'])->name('questions.bulk');
 Route::post('questions/{question}/duplicate', [QuestionController::class, 'duplicate'])->name('questions.duplicate');
-Route::post('questions/{question}/restore', [QuestionController::class, 'restore'])->withoutScopedBindings()->name('questions.restore');
-Route::resource('questions', QuestionController::class);
+Route::post('questions/{question}/restore', [QuestionController::class, 'restore'])->withTrashed()->name('questions.restore');
+Route::resource('questions', QuestionController::class)->withTrashed(['show']);
 Route::resource('tags', TagController::class)->only(['store', 'update', 'destroy']);
 
 Route::inertia('quizzes', 'ComingSoon', ['section' => 'Quizzes'])->name('quizzes.index');
