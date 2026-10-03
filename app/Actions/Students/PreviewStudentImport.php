@@ -105,6 +105,11 @@ class PreviewStudentImport
         }
 
         $handle = fopen('php://temp', 'r+');
+
+        if ($handle === false) {
+            throw new \RuntimeException('Unable to open a temporary stream for the CSV import.');
+        }
+
         fwrite($handle, $raw);
         rewind($handle);
 
