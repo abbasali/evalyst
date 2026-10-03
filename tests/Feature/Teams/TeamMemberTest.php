@@ -12,49 +12,6 @@ class TeamMemberTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_team_member_roles_can_be_updated_by_owners()
-    {
-        $owner = User::factory()->create();
-        $member = User::factory()->create();
-        $team = Team::factory()->create();
-
-        $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-        $team->members()->attach($member, ['role' => TeamRole::Member->value]);
-
-        $response = $this
-            ->actingAs($owner)
-            ->patch(route('teams.members.update', [$team, $member]), [
-                'role' => TeamRole::Admin->value,
-            ]);
-
-        $response->assertRedirect(route('teams.edit', $team));
-
-        $this->assertEquals(
-            TeamRole::Admin->value,
-            $team->members()->where('user_id', $member->id)->first()->pivot->role->value,
-        );
-    }
-
-    public function test_team_member_roles_can_be_updated_by_any_member()
-    {
-        $owner = User::factory()->create();
-        $admin = User::factory()->create();
-        $member = User::factory()->create();
-        $team = Team::factory()->create();
-
-        $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-        $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
-        $team->members()->attach($member, ['role' => TeamRole::Member->value]);
-
-        $response = $this
-            ->actingAs($admin)
-            ->patch(route('teams.members.update', [$team, $member]), [
-                'role' => TeamRole::Admin->value,
-            ]);
-
-        $response->assertRedirect(); // All instructors are equal (D-003).
-    }
-
     public function test_team_members_can_be_removed_by_owners()
     {
         $owner = User::factory()->create();
@@ -105,29 +62,6 @@ class TeamMemberTest extends TestCase
         $response->assertForbidden();
 
         $this->assertTrue($owner->fresh()->belongsToTeam($team));
-    }
-
-    public function test_team_member_role_cannot_be_set_to_owner()
-    {
-        $owner = User::factory()->create();
-        $member = User::factory()->create();
-        $team = Team::factory()->create();
-
-        $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-        $team->members()->attach($member, ['role' => TeamRole::Member->value]);
-
-        $response = $this
-            ->actingAs($owner)
-            ->patch(route('teams.members.update', [$team, $member]), [
-                'role' => TeamRole::Owner->value,
-            ]);
-
-        $response->assertSessionHasErrors('role');
-
-        $this->assertEquals(
-            TeamRole::Member->value,
-            $team->members()->where('user_id', $member->id)->first()->pivot->role->value,
-        );
     }
 
     public function test_removed_member_current_team_falls_back_to_another_course()

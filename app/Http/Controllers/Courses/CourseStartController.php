@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Courses;
 
 use App\Http\Controllers\Controller;
+use App\Models\Team;
 use App\Models\TeamInvitation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class CourseStartController extends Controller
 
         return Inertia::render('onboarding/Start', [
             'timezones' => timezone_identifiers_list(),
-            'defaultTimezone' => 'Asia/Kolkata',
+            'defaultTimezone' => Team::DEFAULT_TIMEZONE,
             'pendingInvitations' => TeamInvitation::query()
                 ->with(['inviter', 'team'])
                 ->whereRaw('LOWER(email) = ?', [strtolower($user->email)])

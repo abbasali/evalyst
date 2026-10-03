@@ -3,11 +3,14 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { Button } from '@/components/ui/button';
+import { start } from '@/routes/courses';
 import { dashboard, login } from '@/routes';
 
 const page = usePage();
 const dashboardUrl = computed(() =>
-    page.props.currentTeam ? dashboard(page.props.currentTeam.slug).url : '/',
+    page.props.currentTeam
+        ? dashboard(page.props.currentTeam.slug).url
+        : start().url,
 );
 </script>
 

@@ -5,7 +5,6 @@ namespace App\Concerns;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * For course-owned models (a `team_id` column). See docs/01-architecture.md §Course scoping.
@@ -17,9 +16,13 @@ trait BelongsToCourse
 {
     public static function bootBelongsToCourse(): void
     {
+        // Fill team_id from the `{current_team}` route parameter, never from the user's
+        // "current course" (which can differ, e.g. on settings routes or in queued jobs).
         static::creating(function ($model) {
-            if (empty($model->team_id) && $teamId = Auth::user()?->current_team_id) {
-                $model->team_id = $teamId;
+            $team = request()->route('current_team');
+
+            if (empty($model->team_id) && $team instanceof Team) {
+                $model->team_id = $team->id;
             }
         });
     }
