@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Http\Controllers\Instructor;
+
+use App\Actions\Questions\DuplicateQuestion;
+use App\Actions\Questions\SaveQuestion;
+use App\Enums\ChoiceScoringPolicy;
+use App\Enums\CodeLanguage;
+use App\Enums\Difficulty;
+use App\Enums\QuestionSource;
+use App\Enums\QuestionType;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Instructor\QuestionRequest;
+use App\Http\Resources\QuestionResource;
+use App\Models\Question;
+use App\Models\Tag;
+use App\Models\Team;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class QuestionController extends Controller
+{
+    public function index(Request $request, Team $currentTeam): Response
+    {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:200'],
+            'type' => ['nullable', Rule::enum(QuestionType::class)],
+            'difficulty' => ['nullable', Rule::enum(Difficulty::class)],
+            'source' => ['nullable', Rule::enum(QuestionSource::class)],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['integer'],
+            'needs_verification' => ['nullable', 'boolean'],
+            'trashed' => ['nullable', 'boolean'],
+        ]);
+
+        $questions = $currentTeam->questions()
+            ->filter($filters)
+            ->with('tags:id,name')
+            ->withCount('options')
+            ->latest('id')
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn (Question $question) => [
+                'id' => $question->id,
+                'type' => $question->type->value,
+                'type_label' => $question->type->label(),
+                'excerpt' => Str::limit($question->body, 400, ''),
+                'default_marks' => (float) $question->default_marks,
+                'difficulty' => $question->difficulty?->value,
+                'source' => $question->source->value,
+                'needs_verification' => $question->needs_verification,
+                'locked' => $question->isLocked(),
+                'deleted' => $question->trashed(),
+                'tags' => $question->tags->map(fn (Tag $tag) => ['id' => $tag->id, 'name' => $tag->name]),
+            ]);
+
+        return Inertia::render('questions/Index', [
+            'questions' => $questions,
+            'filters' => [
+                'q' => $filters['q'] ?? '',
+                'type' => $filters['type'] ?? null,
+                'difficulty' => $filters['difficulty'] ?? null,
+                'source' => $filters['source'] ?? null,
+                'tags' => array_map('intval', $filters['tags'] ?? []),
+                'needs_verification' => (bool) ($filters['needs_verification'] ?? false),
+                'trashed' => (bool) ($filters['trashed'] ?? false),
+            ],
+            'total' => $currentTeam->questions()->count(),
+            ...$this->formOptions($currentTeam),
+        ]);
+    }
+
+    public function create(Team $currentTeam): Response
+    {
+        return Inertia::render('questions/Form', [
+            'question' => null,
+            ...$this->formOptions($currentTeam),
+        ]);
+    }
+
+    public function store(QuestionRequest $request, Team $currentTeam, SaveQuestion $save): RedirectResponse
+    {
+        $save->handle($currentTeam, $request->user(), $request->validated());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Question saved.')]);
+
+        return $request->boolean('add_another')
+            ? to_route('questions.create', $currentTeam)
+            : to_route('questions.index', $currentTeam);
+    }
+
+    /**
+     * Full detail as JSON (used by the preview dialog).
+     */
+    public function show(Team $currentTeam, Question $question): QuestionResource
+    {
+        return new QuestionResource($question->load(['options', 'tags']));
+    }
+
+    public function edit(Team $currentTeam, Question $question): Response
+    {
+        return Inertia::render('questions/Form', [
+            'question' => (new QuestionResource($question->load(['options', 'tags'])))->resolve(),
+            ...$this->formOptions($currentTeam),
+        ]);
+    }
+
+    public function update(QuestionRequest $request, Team $currentTeam, Question $question, SaveQuestion $save): RedirectResponse
+    {
+        $save->handle($currentTeam, $request->user(), $request->validated(), $question);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Question updated.')]);
+
+        return to_route('questions.index', $currentTeam);
+    }
+
+    public function destroy(Team $currentTeam, Question $question): RedirectResponse
+    {
+        // From M05: blocked while the question is in a published assessment.
+        $question->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Question deleted.')]);
+
+        return back();
+    }
+
+    public function restore(Team $currentTeam, int $question): RedirectResponse
+    {
+        $currentTeam->questions()->onlyTrashed()->findOrFail($question)->restore();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Question restored.')]);
+
+        return back();
+    }
+
+    public function duplicate(Request $request, Team $currentTeam, Question $question, DuplicateQuestion $duplicate): RedirectResponse
+    {
+        $copy = $duplicate->handle($question->load(['options', 'tags']), $request->user());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Question duplicated. You are editing the copy.')]);
+
+        return to_route('questions.edit', [$currentTeam, $copy]);
+    }
+
+    /**
+     * Bulk add/remove a tag, or delete, for selected questions.
+     */
+    public function bulk(Request $request, Team $currentTeam): RedirectResponse
+    {
+        $data = $request->validate([
+            'action' => ['required', Rule::in(['add_tag', 'remove_tag', 'delete'])],
+            'ids' => ['required', 'array', 'max:500'],
+            'ids.*' => ['integer'],
+            'tag_id' => ['required_unless:action,delete', 'nullable', 'integer', Rule::exists('tags', 'id')->where('team_id', $currentTeam->id)],
+        ]);
+
+        $questions = $currentTeam->questions()->whereKey($data['ids'])->get();
+
+        foreach ($questions as $question) {
+            match ($request->string('action')->value()) {
+                'add_tag' => $question->tags()->syncWithoutDetaching([$data['tag_id']]),
+                'remove_tag' => $question->tags()->detach($data['tag_id']),
+                default => $question->delete(),
+            };
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice(':count question updated.|:count questions updated.', $questions->count())]);
+
+        return back();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formOptions(Team $team): array
+    {
+        return [
+            'types' => QuestionType::options(),
+            'difficulties' => Difficulty::options(),
+            'scoringPolicies' => ChoiceScoringPolicy::options(),
+            'codeLanguages' => CodeLanguage::options(),
+            'tags' => $team->tags()->withCount('questions')->orderBy('name')->get()
+                ->map(fn (Tag $tag) => ['id' => $tag->id, 'name' => $tag->name, 'questions_count' => $tag->questions_count]),
+        ];
+    }
+}
