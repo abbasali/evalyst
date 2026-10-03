@@ -54,7 +54,9 @@ const statusBadge: Record<
 };
 
 function upload(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // so re-picking the same (fixed) file fires change again
 
     if (!file) {
         return;
@@ -88,6 +90,10 @@ function submit() {
             onStart: () => (processing.value = true),
             onFinish: () => (processing.value = false),
             onSuccess: () => (open.value = false),
+            onError: (errors) => {
+                preview_.value = null;
+                error.value = errors.file ?? null;
+            },
         },
     );
 }

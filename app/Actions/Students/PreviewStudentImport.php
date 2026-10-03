@@ -6,22 +6,22 @@ use App\Models\Student;
 use App\Models\Team;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use SplFileObject;
 
 class PreviewStudentImport
 {
     public const MAX_ROWS = 2000;
 
     /**
-     * Accepted header names for each column (compared lowercased, spaces → underscores).
+     * Accepted header names for each column, after normalising to snake_case.
      *
      * @var array<string, list<string>>
      */
     private const HEADERS = [
-        'name' => ['name', 'student_name', 'full_name'],
-        'roll_number' => ['roll_number', 'roll', 'roll_no', 'rollno'],
-        'email' => ['email', 'email_address'],
+        'name' => ['name', 'student_name', 'full_name', 'student'],
+        'roll_number' => ['roll_number', 'roll', 'roll_no', 'rollno', 'roll_num', 'enrollment_no', 'enrolment_no'],
+        'email' => ['email', 'email_id', 'e_mail', 'email_address', 'student_email'],
     ];
 
     /**
@@ -31,21 +31,19 @@ class PreviewStudentImport
      */
     public function handle(Team $team, UploadedFile $file): array
     {
-        $csv = new SplFileObject($file->getRealPath());
-        $csv->setFlags(SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY | SplFileObject::READ_AHEAD | SplFileObject::DROP_NEW_LINE);
+        $handle = $this->utf8Stream($file);
 
-        $columns = $this->mapHeader($csv->fgetcsv() ?: []);
+        $columns = $this->mapHeader(fgetcsv($handle, null, ',', '"', '') ?: []);
 
         $existing = $team->students()->get()->keyBy('roll_number');
         $seen = [];
         $rows = [];
         $line = 1;
 
-        while (! $csv->eof()) {
-            $values = $csv->fgetcsv();
+        while (($values = fgetcsv($handle, null, ',', '"', '')) !== false) {
             $line++;
 
-            if (! is_array($values) || $values === [null] || implode('', array_map('strval', $values)) === '') {
+            if (Str::trim(implode('', array_map('strval', $values))) === '') {
                 continue;
             }
 
@@ -53,26 +51,34 @@ class PreviewStudentImport
                 throw ValidationException::withMessages(['file' => __('The file has more than :max rows.', ['max' => self::MAX_ROWS])]);
             }
 
-            $name = trim((string) ($values[$columns['name']] ?? ''));
-            $roll = Student::normalizeRollNumber((string) ($values[$columns['roll_number']] ?? ''));
-            $email = isset($columns['email']) ? trim((string) ($values[$columns['email']] ?? '')) : '';
-            $email = $email === '' ? null : $email;
+            $email = isset($columns['email']) ? Str::trim((string) ($values[$columns['email']] ?? '')) : '';
 
-            $row = ['line' => $line, 'name' => $name, 'roll_number' => $roll, 'email' => $email, 'status' => 'new', 'error' => null];
+            $row = [
+                'line' => $line,
+                'name' => Str::squish((string) ($values[$columns['name']] ?? '')),
+                'roll_number' => Student::normalizeRollNumber((string) ($values[$columns['roll_number']] ?? '')),
+                'email' => $email === '' ? null : mb_strtolower($email),
+                'status' => 'new',
+                'error' => null,
+            ];
             $row['error'] = $this->rowError($row, $seen);
 
             if ($row['error']) {
                 $row['status'] = 'error';
-            } elseif ($student = $existing->get($roll)) {
-                $row['status'] = $student->name === $name && $student->email === $email ? 'unchanged' : 'update';
-            }
-
-            if ($roll !== '') {
-                $seen[$roll] = true;
+            } else {
+                $seen[$row['roll_number']] = true;
+                $student = $existing->get($row['roll_number']);
+                $row['status'] = match (true) {
+                    $student === null => 'new',
+                    $student->name === $row['name'] && $student->email === $row['email'] => 'unchanged',
+                    default => 'update',
+                };
             }
 
             $rows[] = $row;
         }
+
+        fclose($handle);
 
         if ($rows === []) {
             throw ValidationException::withMessages(['file' => __('The file has no student rows.')]);
@@ -82,13 +88,37 @@ class PreviewStudentImport
     }
 
     /**
+     * Read the upload as UTF-8 (Excel's Windows-1252 CSVs are converted) without a BOM.
+     *
+     * @return resource
+     */
+    private function utf8Stream(UploadedFile $file)
+    {
+        $raw = (string) file_get_contents($file->getRealPath());
+
+        if (str_starts_with($raw, "\xEF\xBB\xBF")) {
+            $raw = substr($raw, 3);
+        }
+
+        if (! mb_check_encoding($raw, 'UTF-8')) {
+            $raw = mb_convert_encoding($raw, 'UTF-8', 'Windows-1252');
+        }
+
+        $handle = fopen('php://temp', 'r+');
+        fwrite($handle, $raw);
+        rewind($handle);
+
+        return $handle;
+    }
+
+    /**
      * @param  array<int, string|null>  $header
      * @return array{name: int, roll_number: int, email?: int}
      */
     private function mapHeader(array $header): array
     {
         $normalized = array_map(
-            fn ($value) => str_replace([' ', '-', '.'], '_', strtolower(trim((string) $value, " \t\n\r\0\x0B\u{FEFF}"))),
+            fn ($value) => trim((string) preg_replace('/[^a-z0-9]+/', '_', mb_strtolower(Str::trim((string) $value))), '_'),
             $header,
         );
 

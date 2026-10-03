@@ -201,7 +201,11 @@ function remove() {
                                 colspan="4"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
-                                No students match “{{ search }}”.
+                                {{
+                                    filters.search
+                                        ? `No students match “${filters.search}”.`
+                                        : 'No students on this page.'
+                                }}
                             </td>
                         </tr>
                     </tbody>
