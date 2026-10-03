@@ -44,7 +44,7 @@ function highlight(code: string, language: string): string {
     return escapeHtml(code);
 }
 
-const md: MarkdownIt = new MarkdownIt({
+const md = new MarkdownIt({
     html: false,
     linkify: true,
     breaks: false,
@@ -63,7 +63,9 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
  * Render untrusted Markdown (question bodies, options, answers) to safe HTML.
  */
 export function renderMarkdown(source: string, inline = false): string {
-    const html = inline ? md.renderInline(source ?? '') : md.render(source ?? '');
+    const html = inline
+        ? md.renderInline(source ?? '')
+        : md.render(source ?? '');
 
     return DOMPurify.sanitize(html, { ADD_ATTR: ['target'] });
 }
@@ -73,10 +75,11 @@ export function renderMarkdown(source: string, inline = false): string {
  */
 export function markdownExcerpt(source: string, length = 120): string {
     const text = (source ?? '')
-        .replace(/```[\s\S]*?```/g, ' [code] ')
+        .replace(/```[\s\S]*?(```|$)/g, ' \u0000 ')
         .replace(/`([^`]*)`/g, '$1')
-        .replace(/[#>*_~[\]()!-]+/g, ' ')
+        .replace(/[#>*_~[\]()!]+/g, ' ')
         .replace(/\s+/g, ' ')
+        .replaceAll('\u0000', '[code]')
         .trim();
 
     return text.length > length ? `${text.slice(0, length - 1)}…` : text;

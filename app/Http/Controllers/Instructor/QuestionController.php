@@ -161,10 +161,10 @@ class QuestionController extends Controller
         $questions = $currentTeam->questions()->whereKey($data['ids'])->get();
 
         foreach ($questions as $question) {
-            match ($data['action']) {
+            match ($request->string('action')->value()) {
                 'add_tag' => $question->tags()->syncWithoutDetaching([$data['tag_id']]),
                 'remove_tag' => $question->tags()->detach($data['tag_id']),
-                'delete' => $question->delete(),
+                default => $question->delete(),
             };
         }
 

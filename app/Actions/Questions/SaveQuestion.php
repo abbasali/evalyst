@@ -66,7 +66,7 @@ class SaveQuestion
     }
 
     /**
-     * @param  list<array{body: string, is_correct: bool|string|int}>  $options
+     * @param  array<int, array{body: string, is_correct: bool|string|int}>  $options
      */
     private function syncOptions(Question $question, array $options): void
     {

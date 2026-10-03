@@ -185,38 +185,118 @@
     .md h4 {
         @apply font-semibold;
     }
-    .md h1 { @apply text-lg; }
-    .md h2 { @apply text-base; }
-    .md ul { @apply list-disc pl-5; }
-    .md ol { @apply list-decimal pl-5; }
-    .md li + li { @apply mt-1; }
-    .md a { @apply underline underline-offset-4; }
-    .md blockquote { @apply border-l-2 pl-3 text-muted-foreground; }
-    .md table { @apply w-full border-collapse text-left; }
-    .md th, .md td { @apply border px-2 py-1; }
+    .md h1 {
+        @apply text-lg;
+    }
+    .md h2 {
+        @apply text-base;
+    }
+    .md ul {
+        @apply list-disc pl-5;
+    }
+    .md ol {
+        @apply list-decimal pl-5;
+    }
+    .md li + li {
+        @apply mt-1;
+    }
+    .md a {
+        @apply underline underline-offset-4;
+    }
+    .md blockquote {
+        @apply border-l-2 pl-3 text-muted-foreground;
+    }
+    .md table {
+        @apply w-full border-collapse text-left;
+    }
+    .md th,
+    .md td {
+        @apply border px-2 py-1;
+    }
     .md :not(pre) > code {
         @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em];
     }
     .md pre {
         @apply overflow-x-auto rounded-lg border bg-muted/50 p-3 font-mono text-[13px] leading-relaxed;
     }
-    .md-inline > * + * { @apply mt-0; }
+    .md-inline > * + * {
+        @apply mt-0;
+    }
 
     /* highlight.js tokens (light) */
-    .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-built_in { color: #cf222e; }
-    .hljs-string, .hljs-attr-value, .hljs-regexp { color: #0a3069; }
-    .hljs-number, .hljs-variable, .hljs-template-variable { color: #0550ae; }
-    .hljs-title, .hljs-title.function_, .hljs-section { color: #8250df; }
-    .hljs-comment, .hljs-quote, .hljs-meta { color: #6e7781; font-style: italic; }
-    .hljs-attr, .hljs-attribute, .hljs-name, .hljs-tag { color: #116329; }
-    .hljs-type, .hljs-title.class_ { color: #953800; }
+    .hljs-keyword,
+    .hljs-selector-tag,
+    .hljs-literal,
+    .hljs-built_in {
+        color: #cf222e;
+    }
+    .hljs-string,
+    .hljs-attr-value,
+    .hljs-regexp {
+        color: #0a3069;
+    }
+    .hljs-number,
+    .hljs-variable,
+    .hljs-template-variable {
+        color: #0550ae;
+    }
+    .hljs-title,
+    .hljs-title.function_,
+    .hljs-section {
+        color: #8250df;
+    }
+    .hljs-comment,
+    .hljs-quote,
+    .hljs-meta {
+        color: #6e7781;
+        font-style: italic;
+    }
+    .hljs-attr,
+    .hljs-attribute,
+    .hljs-name,
+    .hljs-tag {
+        color: #116329;
+    }
+    .hljs-type,
+    .hljs-title.class_ {
+        color: #953800;
+    }
 
     /* highlight.js tokens (dark) */
-    .dark .hljs-keyword, .dark .hljs-selector-tag, .dark .hljs-literal, .dark .hljs-built_in { color: #ff7b72; }
-    .dark .hljs-string, .dark .hljs-attr-value, .dark .hljs-regexp { color: #a5d6ff; }
-    .dark .hljs-number, .dark .hljs-variable, .dark .hljs-template-variable { color: #79c0ff; }
-    .dark .hljs-title, .dark .hljs-title.function_, .dark .hljs-section { color: #d2a8ff; }
-    .dark .hljs-comment, .dark .hljs-quote, .dark .hljs-meta { color: #8b949e; }
-    .dark .hljs-attr, .dark .hljs-attribute, .dark .hljs-name, .dark .hljs-tag { color: #7ee787; }
-    .dark .hljs-type, .dark .hljs-title.class_ { color: #ffa657; }
+    .dark .hljs-keyword,
+    .dark .hljs-selector-tag,
+    .dark .hljs-literal,
+    .dark .hljs-built_in {
+        color: #ff7b72;
+    }
+    .dark .hljs-string,
+    .dark .hljs-attr-value,
+    .dark .hljs-regexp {
+        color: #a5d6ff;
+    }
+    .dark .hljs-number,
+    .dark .hljs-variable,
+    .dark .hljs-template-variable {
+        color: #79c0ff;
+    }
+    .dark .hljs-title,
+    .dark .hljs-title.function_,
+    .dark .hljs-section {
+        color: #d2a8ff;
+    }
+    .dark .hljs-comment,
+    .dark .hljs-quote,
+    .dark .hljs-meta {
+        color: #8b949e;
+    }
+    .dark .hljs-attr,
+    .dark .hljs-attribute,
+    .dark .hljs-name,
+    .dark .hljs-tag {
+        color: #7ee787;
+    }
+    .dark .hljs-type,
+    .dark .hljs-title.class_ {
+        color: #ffa657;
+    }
 }

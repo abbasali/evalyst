@@ -59,8 +59,10 @@ class QuestionRequest extends FormRequest
                 return;
             }
 
-            $correct = collect($this->input('options', []))->filter(fn ($option) => filter_var($option['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN))->count();
-            $total = count($this->input('options', []));
+            /** @var array<int, array{is_correct?: mixed}> $options */
+            $options = (array) $this->input('options', []);
+            $correct = count(array_filter($options, fn (array $option) => filter_var($option['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN)));
+            $total = count($options);
 
             if ($type === QuestionType::SingleChoice && $correct !== 1) {
                 $validator->errors()->add('options', __('Mark exactly one option as correct.'));
@@ -78,6 +80,7 @@ class QuestionRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'body' => 'question',
             'options.*.body' => 'option text',
             'default_marks' => 'marks',
             'model_answer' => 'model answer',

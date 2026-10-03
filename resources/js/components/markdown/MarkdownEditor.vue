@@ -65,10 +65,7 @@ const tab = ref<'write' | 'preview'>('write');
             :aria-invalid="props.invalid || undefined"
             class="min-h-24 rounded-none border-0 font-mono text-sm shadow-none focus-visible:ring-0"
         />
-        <div
-            v-if="tab === 'preview'"
-            class="min-h-24 px-3 py-2 text-sm"
-        >
+        <div v-if="tab === 'preview'" class="min-h-24 px-3 py-2 text-sm">
             <Markdown v-if="model.trim()" :source="model" />
             <p v-else class="text-muted-foreground">Nothing to preview.</p>
         </div>

@@ -42,13 +42,13 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M03 — Question bank → [milestones/M03-question-bank.md](milestones/M03-question-bank.md)
 
-- [ ] **M03.1** Enums, migrations, models, factories: questions, question_options, tags, question_tag
-- [ ] **M03.2** `<Markdown>` component (markdown-it + DOMPurify + highlight.js)
-- [ ] **M03.3** Question index: filters (type, tag, difficulty, source, needs_verification), search, pagination
-- [ ] **M03.4** Create/edit question form for all 4 types with validation per type
-- [ ] **M03.5** Question preview (as the student will see it)
-- [ ] **M03.6** Tags: create inline, bulk-tag, rename/delete
-- [ ] **M03.7** Locking (D-009) + duplicate question + soft delete
+- [x] **M03.1** Enums, migrations, models, factories: questions, question_options, tags, question_tag
+- [x] **M03.2** `<Markdown>` component (markdown-it + DOMPurify + highlight.js)
+- [x] **M03.3** Question index: filters (type, tag, difficulty, source, needs_verification), search, pagination
+- [x] **M03.4** Create/edit question form for all 4 types with validation per type — multiple choice: 3–8 options, ≥2 correct and ≥1 incorrect (feature doc); locked questions accept grading fields only (D-009)
+- [x] **M03.5** Question preview (as the student will see it)
+- [x] **M03.6** Tags: create inline, bulk-tag, rename/delete — tags managed in a dialog on the index (no separate page)
+- [x] **M03.7** Locking (D-009) + duplicate question + soft delete — the "in a published assessment" delete guard lands with M05
 
 ## M04 — AI foundation & question generation → [milestones/M04-ai-question-generation.md](milestones/M04-ai-question-generation.md)
 

@@ -14,7 +14,11 @@ const html = computed(() => renderMarkdown(props.source ?? '', props.inline));
 
 <template>
     <!-- eslint-disable-next-line vue/no-v-html -- sanitised by DOMPurify -->
-    <span v-if="inline" :class="cn('md md-inline', props.class)" v-html="html" />
+    <span
+        v-if="inline"
+        :class="cn('md md-inline', props.class)"
+        v-html="html"
+    />
     <!-- eslint-disable-next-line vue/no-v-html -- sanitised by DOMPurify -->
     <div v-else :class="cn('md', props.class)" v-html="html" />
 </template>
