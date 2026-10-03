@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -31,7 +32,7 @@ class Student extends Model
      */
     public static function normalizeRollNumber(string $rollNumber): string
     {
-        return mb_strtoupper(trim($rollNumber));
+        return mb_strtoupper(Str::trim($rollNumber));
     }
 
     /**
@@ -47,7 +48,7 @@ class Student extends Model
      */
     public function scopeSearch(Builder $query, ?string $term): void
     {
-        $term = trim((string) $term);
+        $term = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], Str::trim((string) $term));
 
         $query->when($term !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
             ->where('name', 'like', "%{$term}%")
