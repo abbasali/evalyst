@@ -3,11 +3,15 @@
 namespace App\Ai\Agents;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Attributes\Strict;
+use Laravel\Ai\Attributes\Timeout;
 
 /**
  * Independently answers generated choice questions (without the answer key) so
  * disagreements with the key can be flagged. See docs/03-ai.md §2.
  */
+#[Strict]
+#[Timeout(90)]
 class QuestionVerifier extends StructuredAgent
 {
     protected function promptFile(): string

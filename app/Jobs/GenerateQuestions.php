@@ -10,10 +10,12 @@ use App\Ai\Validation\VerificationComparator;
 use App\Enums\AiRunPurpose;
 use App\Enums\GenerationStatus;
 use App\Models\QuestionGeneration;
+use DateTimeInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Str;
 use Laravel\Ai\Responses\AgentResponse;
 use Throwable;
@@ -26,18 +28,32 @@ class GenerateQuestions implements ShouldQueue
 {
     use Queueable;
 
-    public int $tries = 3;
+    /**
+     * Real failures allowed (rate-limit releases don't count towards this).
+     */
+    public int $maxExceptions = 2;
 
-    public int $timeout = 180;
+    /**
+     * Generation (≤150s) + one follow-up (≤150s) + verification (≤90s) can't all be slow
+     * at once in practice; keep below the queue's retry_after (360s).
+     */
+    public int $timeout = 330;
 
     /**
      * @var list<int>
      */
-    public array $backoff = [30, 120, 300];
+    public array $backoff = [30, 120];
+
+    public bool $deleteWhenMissingModels = true;
 
     public function __construct(public QuestionGeneration $generation)
     {
         $this->onQueue('ai');
+    }
+
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addMinutes(20);
     }
 
     /**
@@ -45,7 +61,10 @@ class GenerateQuestions implements ShouldQueue
      */
     public function middleware(): array
     {
-        return [new RateLimited('openai')];
+        return [
+            (new WithoutOverlapping("question-generation:{$this->generation->id}"))->expireAfter(400)->releaseAfter(30),
+            new RateLimited('openai'),
+        ];
     }
 
     public function handle(RecordsAiRun $runs, GeneratedQuestionValidator $validator, VerificationComparator $comparator): void
@@ -58,12 +77,45 @@ class GenerateQuestions implements ShouldQueue
 
         $generation->update(['status' => GenerationStatus::Running, 'error' => null]);
 
+        // Checkpoint: a retried job reuses drafts saved by an earlier attempt instead of paying again.
+        if ($generation->drafts === null) {
+            [$drafts, $warnings] = $this->generateDrafts($runs, $validator, $generation);
+            $generation->update(['drafts' => $drafts, 'warnings' => $warnings]);
+        }
+
+        [$drafts, $verifyWarning] = $this->verify($runs, $comparator, $generation, $generation->drafts ?? []);
+
+        // Never overwrite a generation another run already completed (drafts may have been accepted).
+        QuestionGeneration::whereKey($generation->id)
+            ->where('status', GenerationStatus::Running)
+            ->update([
+                'status' => GenerationStatus::Completed,
+                'drafts' => json_encode(array_map(fn (array $draft) => [...$draft, 'uid' => (string) Str::ulid(), 'accepted' => false], $drafts)),
+                'warnings' => json_encode(array_values(array_filter([...($generation->warnings ?? []), $verifyWarning]))),
+                'updated_at' => now(),
+            ]);
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        $this->generation->update([
+            'status' => GenerationStatus::Failed,
+            'error' => __('The AI service could not generate questions right now. Please try again in a few minutes.'),
+        ]);
+    }
+
+    /**
+     * Generate, validate and (once) ask again for missing counts.
+     *
+     * @return array{0: list<array<string, mixed>>, 1: list<string>}
+     */
+    private function generateDrafts(RecordsAiRun $runs, GeneratedQuestionValidator $validator, QuestionGeneration $generation): array
+    {
         $requested = array_map('intval', $generation->type_counts);
         $result = $validator->validate($this->generate($runs, $generation, $requested), $requested);
         $drafts = $result['drafts'];
         $warnings = $result['warnings'];
 
-        // One follow-up call asking only for what's missing.
         if ($result['missing'] !== []) {
             $retry = $validator->validate($this->generate($runs, $generation, $result['missing'], $drafts), $result['missing']);
             $drafts = [...$drafts, ...$retry['drafts']];
@@ -74,21 +126,7 @@ class GenerateQuestions implements ShouldQueue
             array_unshift($warnings, sprintf('Only %d of %d questions could be generated.', count($drafts), $generation->requestedTotal()));
         }
 
-        $drafts = $this->verify($runs, $comparator, $generation, $drafts);
-
-        $generation->update([
-            'status' => GenerationStatus::Completed,
-            'drafts' => array_map(fn (array $draft) => [...$draft, 'uid' => (string) Str::ulid(), 'accepted' => false], $drafts),
-            'warnings' => $warnings,
-        ]);
-    }
-
-    public function failed(?Throwable $exception): void
-    {
-        $this->generation->update([
-            'status' => GenerationStatus::Failed,
-            'error' => $exception ? Str::limit($exception->getMessage(), 1000) : 'Generation failed.',
-        ]);
+        return [$drafts, $warnings];
     }
 
     /**
@@ -117,24 +155,36 @@ class GenerateQuestions implements ShouldQueue
     }
 
     /**
+     * Check choice answer keys. If the verifier is unavailable, flag choice drafts as
+     * disputed instead of failing (the instructor reviews them anyway).
+     *
      * @param  list<array<string, mixed>>  $drafts
-     * @return list<array<string, mixed>>
+     * @return array{0: list<array<string, mixed>>, 1: string|null}
      */
     private function verify(RecordsAiRun $runs, VerificationComparator $comparator, QuestionGeneration $generation, array $drafts): array
     {
         $choice = array_filter($drafts, fn (array $draft) => in_array($draft['type'], ['single_choice', 'multiple_choice'], true));
 
         if ($choice === []) {
-            return $comparator->compare($drafts, []);
+            return [$comparator->compare($drafts, []), null];
         }
 
-        $response = $runs->run(
-            AiRunPurpose::QuestionVerification,
-            $generation,
-            fn () => (new QuestionVerifier)->prompt(QuestionVerifier::buildPrompt($choice)),
-        );
+        try {
+            $response = $runs->run(
+                AiRunPurpose::QuestionVerification,
+                $generation,
+                fn () => (new QuestionVerifier)->prompt(QuestionVerifier::buildPrompt($choice)),
+            );
+        } catch (Throwable $exception) {
+            report($exception);
 
-        return $comparator->compare($drafts, (array) (self::structured($response)['results'] ?? []));
+            return [
+                $comparator->compare($drafts, [], __('The answer key could not be checked automatically.')),
+                __('Answer keys could not be checked automatically; please review the choice questions carefully.'),
+            ];
+        }
+
+        return [$comparator->compare($drafts, (array) (self::structured($response)['results'] ?? [])), null];
     }
 
     /**
@@ -144,8 +194,13 @@ class GenerateQuestions implements ShouldQueue
      */
     private function existingQuestionSummaries(QuestionGeneration $generation): array
     {
-        return $generation->team->questions()
-            ->when($generation->tag_ids, fn ($query, array $tagIds) => $query->whereHas('tags', fn ($query) => $query->whereIn('tags.id', $tagIds)))
+        $tagged = $generation->team->questions()
+            ->when($generation->tag_ids, fn ($query, array $tagIds) => $query->whereHas('tags', fn ($query) => $query->whereIn('tags.id', $tagIds)));
+
+        // Same tags, else the newest questions in the course.
+        $query = $generation->tag_ids && $tagged->clone()->exists() ? $tagged : $generation->team->questions();
+
+        return $query
             ->latest('id')
             ->limit(40)
             ->pluck('body')

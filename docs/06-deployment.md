@@ -79,3 +79,7 @@ Instructor invitations are the only email. Any transactional provider works. Con
 3. `cloud deploy:monitor -n` until it succeeds.
 4. Check the app URL, the logs, that queues are draining, and that the scheduler ran recently.
 5. For big releases, run the M12.4 smoke-test checklist.
+
+## Queue `retry_after`
+
+`config/queue.php` defaults `DB_QUEUE_RETRY_AFTER` and `REDIS_QUEUE_RETRY_AFTER` to 360s. That is longer than the longest job timeout (330s for `GenerateQuestions`). Keep it that way in every environment, or a second worker will pick up a job that is still running.

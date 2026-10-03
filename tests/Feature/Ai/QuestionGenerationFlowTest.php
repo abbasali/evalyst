@@ -154,3 +154,25 @@ test('a question can be marked verified', function () {
     $this->patch(route('questions.verify', [$team, $question]))->assertRedirect();
     expect($question->fresh()->needs_verification)->toBeFalse();
 });
+
+test('accepting still works after a generation tag was deleted', function () {
+    [, $team] = actingAsInstructor();
+    $generation = completedGeneration($team);
+    Tag::whereKey($generation->tag_ids)->delete();
+
+    $this->post(route('question-generations.accept', [$team, $generation]), acceptedPayload())->assertSessionHasNoErrors();
+
+    expect($team->questions()->sole()->tags()->count())->toBe(0);
+});
+
+test('stuck generations can be retried and do not block new ones', function () {
+    Queue::fake();
+    [, $team] = actingAsInstructor();
+    $stuck = collect(range(1, 3))->map(fn () => $team->questionGenerations()->create([
+        'prompt' => 'x', 'type_counts' => ['open_text' => 1], 'difficulty' => 'easy', 'status' => GenerationStatus::Running,
+    ]));
+    QuestionGeneration::query()->update(['updated_at' => now()->subHour()]);
+
+    $this->post(route('question-generations.store', $team), generationPayload())->assertSessionHasNoErrors();
+    $this->post(route('question-generations.retry', [$team, $stuck->first()]))->assertRedirect();
+});
