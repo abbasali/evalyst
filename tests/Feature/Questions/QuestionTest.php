@@ -155,3 +155,22 @@ test('tags are unique per course and bulk tagging only accepts course tags', fun
     $this->post(route('questions.bulk', $team), ['action' => 'add_tag', 'ids' => $questions->modelKeys(), 'tag_id' => $foreignTag->id])
         ->assertSessionHasErrors('tag_id');
 });
+
+test('grading fields of a locked question save even if its frozen content breaks current rules', function () {
+    [, $team] = actingAsInstructor();
+    $question = Question::factory()->for($team)->multipleChoice()->locked()->create();
+    $question->options()->update(['is_correct' => true]); // every option correct: invalid today
+
+    $this->put(route('questions.update', [$team, $question]), ['default_marks' => 3, 'scoring_policy' => 'partial', 'rubric' => 'Updated'])
+        ->assertSessionHasNoErrors();
+
+    expect($question->fresh()->rubric)->toBe('Updated');
+});
+
+test('deleted questions can be previewed', function () {
+    [, $team] = actingAsInstructor();
+    $question = Question::factory()->for($team)->create();
+    $question->delete();
+
+    $this->getJson(route('questions.show', [$team, $question]))->assertOk()->assertJsonPath('deleted', true);
+});

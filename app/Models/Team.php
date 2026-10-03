@@ -116,6 +116,22 @@ class Team extends Model
     }
 
     /**
+     * @return HasMany<QuestionGeneration, $this>
+     */
+    public function questionGenerations(): HasMany
+    {
+        return $this->hasMany(QuestionGeneration::class);
+    }
+
+    /**
+     * @return HasMany<AiRun, $this>
+     */
+    public function aiRuns(): HasMany
+    {
+        return $this->hasMany(AiRun::class);
+    }
+
+    /**
      * Get all invitations for this team.
      *
      * @return HasMany<TeamInvitation, $this>

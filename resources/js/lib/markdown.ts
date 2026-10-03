@@ -52,12 +52,15 @@ const md = new MarkdownIt({
         `<pre class="hljs"><code>${highlight(code, language.trim().toLowerCase())}</code></pre>`,
 });
 
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.tagName === 'A') {
-        node.setAttribute('target', '_blank');
-        node.setAttribute('rel', 'noopener noreferrer');
-    }
-});
+// DOMPurify needs a DOM; skip the hook during SSR (Markdown renders client-side).
+if (DOMPurify.isSupported) {
+    DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+        if (node.tagName === 'A') {
+            node.setAttribute('target', '_blank');
+            node.setAttribute('rel', 'noopener noreferrer');
+        }
+    });
+}
 
 /**
  * Render untrusted Markdown (question bodies, options, answers) to safe HTML.
@@ -67,7 +70,9 @@ export function renderMarkdown(source: string, inline = false): string {
         ? md.renderInline(source ?? '')
         : md.render(source ?? '');
 
-    return DOMPurify.sanitize(html, { ADD_ATTR: ['target'] });
+    return DOMPurify.isSupported
+        ? DOMPurify.sanitize(html, { ADD_ATTR: ['target'] })
+        : '';
 }
 
 /**

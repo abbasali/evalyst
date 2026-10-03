@@ -21,10 +21,11 @@ class SaveQuestion
      * Create a question, or update one (options are synced by position so IDs survive).
      *
      * @param  array<string, mixed>  $data  Validated QuestionRequest data.
+     * @param  array<string, mixed>  $createAttributes  Extra attributes for new questions (e.g. AI source).
      */
-    public function handle(Team $team, User $user, array $data, ?Question $question = null): Question
+    public function handle(Team $team, User $user, array $data, ?Question $question = null, array $createAttributes = []): Question
     {
-        return DB::transaction(function () use ($team, $user, $data, $question) {
+        return DB::transaction(function () use ($team, $user, $data, $question, $createAttributes) {
             $locked = $question?->isLocked() ?? false;
             $type = $locked ? $question->type : QuestionType::from($data['type']);
 
@@ -52,6 +53,7 @@ class SaveQuestion
                     ...$attributes,
                     'source' => QuestionSource::Manual,
                     'created_by' => $user->id,
+                    ...$createAttributes,
                 ]);
             }
 

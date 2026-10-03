@@ -17,6 +17,7 @@ use App\Models\Tag;
 use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -35,6 +36,7 @@ class QuestionController extends Controller
             'tags.*' => ['integer'],
             'needs_verification' => ['nullable', 'boolean'],
             'trashed' => ['nullable', 'boolean'],
+            'generation' => ['nullable', 'integer'],
         ]);
 
         $questions = $currentTeam->questions()
@@ -49,6 +51,7 @@ class QuestionController extends Controller
                 'type' => $question->type->value,
                 'type_label' => $question->type->label(),
                 'excerpt' => Str::limit($question->body, 400, ''),
+                'question_generation_id' => $question->question_generation_id,
                 'default_marks' => (float) $question->default_marks,
                 'difficulty' => $question->difficulty?->value,
                 'source' => $question->source->value,
@@ -68,8 +71,9 @@ class QuestionController extends Controller
                 'tags' => array_map('intval', $filters['tags'] ?? []),
                 'needs_verification' => (bool) ($filters['needs_verification'] ?? false),
                 'trashed' => (bool) ($filters['trashed'] ?? false),
+                'generation' => isset($filters['generation']) ? (int) $filters['generation'] : null,
             ],
-            'total' => $currentTeam->questions()->count(),
+            'total' => $currentTeam->questions()->withTrashed()->count(),
             ...$this->formOptions($currentTeam),
         ]);
     }
@@ -128,9 +132,9 @@ class QuestionController extends Controller
         return back();
     }
 
-    public function restore(Team $currentTeam, int $question): RedirectResponse
+    public function restore(Team $currentTeam, Question $question): RedirectResponse
     {
-        $currentTeam->questions()->onlyTrashed()->findOrFail($question)->restore();
+        $question->restore();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Question restored.')]);
 
@@ -147,6 +151,18 @@ class QuestionController extends Controller
     }
 
     /**
+     * Clear the "needs verification" flag after the instructor checked the answer key.
+     */
+    public function verify(Team $currentTeam, Question $question): RedirectResponse
+    {
+        $question->update(['needs_verification' => false]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Marked as verified.')]);
+
+        return back();
+    }
+
+    /**
      * Bulk add/remove a tag, or delete, for selected questions.
      */
     public function bulk(Request $request, Team $currentTeam): RedirectResponse
@@ -158,17 +174,19 @@ class QuestionController extends Controller
             'tag_id' => ['required_unless:action,delete', 'nullable', 'integer', Rule::exists('tags', 'id')->where('team_id', $currentTeam->id)],
         ]);
 
-        $questions = $currentTeam->questions()->whereKey($data['ids'])->get();
+        $ids = $currentTeam->questions()->whereKey($data['ids'])->pluck('id');
 
-        foreach ($questions as $question) {
-            match ($request->string('action')->value()) {
-                'add_tag' => $question->tags()->syncWithoutDetaching([$data['tag_id']]),
-                'remove_tag' => $question->tags()->detach($data['tag_id']),
-                default => $question->delete(),
-            };
-        }
+        $count = DB::transaction(fn () => match ($request->string('action')->value()) {
+            // Questions already at the 10-tag limit are skipped.
+            'add_tag' => DB::table('question_tag')->insertOrIgnore(
+                $currentTeam->questions()->whereKey($ids)->has('tags', '<', 10)->pluck('id')
+                    ->map(fn (int $id) => ['question_id' => $id, 'tag_id' => $data['tag_id']])->all(),
+            ),
+            'remove_tag' => DB::table('question_tag')->whereIn('question_id', $ids)->where('tag_id', $data['tag_id'])->delete(),
+            default => $currentTeam->questions()->whereKey($ids)->get()->each->delete()->count(),
+        });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice(':count question updated.|:count questions updated.', $questions->count())]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice(':count question updated.|:count questions updated.', $count)]);
 
         return back();
     }

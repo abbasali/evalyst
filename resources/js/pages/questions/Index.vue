@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
     AlertTriangle,
+    CheckCircle2,
     Copy,
     Eye,
     Library,
@@ -37,13 +38,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { useCourse } from '@/composables/useCourse';
+import { create as generateCreate } from '@/routes/question-generations';
 import { markdownExcerpt } from '@/lib/markdown';
 import {
     bulk,
@@ -53,6 +49,7 @@ import {
     edit,
     index,
     restore,
+    verify,
 } from '@/routes/questions';
 import type {
     Paginated,
@@ -69,6 +66,7 @@ type Filters = {
     tags: number[];
     needs_verification: boolean;
     trashed: boolean;
+    generation: number | null;
 };
 
 const props = defineProps<
@@ -99,7 +97,8 @@ const hasFilters = computed(
             filters.source ||
             filters.tags.length ||
             filters.needs_verification ||
-            filters.trashed
+            filters.trashed ||
+            filters.generation
         ),
 );
 
@@ -114,6 +113,7 @@ const applyFilters = useDebounceFn(() => {
                 tags: filters.tags.length ? filters.tags : undefined,
                 needs_verification: filters.needs_verification ? 1 : undefined,
                 trashed: filters.trashed ? 1 : undefined,
+                generation: filters.generation ?? undefined,
             },
         }),
         {},
@@ -135,6 +135,7 @@ function clearFilters() {
         tags: [],
         needs_verification: false,
         trashed: false,
+        generation: null,
     });
 }
 
@@ -225,20 +226,11 @@ function remove() {
                 <Button variant="ghost" @click="tagsOpen = true">
                     <Tags /> Tags
                 </Button>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger as-child>
-                            <span>
-                                <Button variant="outline" disabled>
-                                    <Sparkles /> Generate with AI
-                                </Button>
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent
-                            >Coming in the next milestone</TooltipContent
-                        >
-                    </Tooltip>
-                </TooltipProvider>
+                <Button variant="outline" as-child>
+                    <Link :href="generateCreate(slug)">
+                        <Sparkles /> Generate with AI
+                    </Link>
+                </Button>
                 <Button as-child>
                     <Link :href="create(slug)"><Plus /> New question</Link>
                 </Button>
@@ -299,6 +291,7 @@ function remove() {
                         <TagSelect
                             v-model="filters.tags"
                             :tags="tags"
+                            :creatable="false"
                             placeholder="Filter by tags…"
                         />
                     </div>
@@ -325,7 +318,7 @@ function remove() {
             </div>
 
             <div
-                v-if="selected.length"
+                v-if="selected.length && !filters.trashed"
                 class="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm"
             >
                 <span class="font-medium">{{ selected.length }} selected</span>
@@ -370,6 +363,7 @@ function remove() {
                     class="flex items-center gap-3 border-b bg-muted/50 px-4 py-2.5 text-xs text-muted-foreground"
                 >
                     <Checkbox
+                        v-if="!filters.trashed"
                         :model-value="allSelected"
                         aria-label="Select all on this page"
                         @update:model-value="toggleAll"
@@ -387,6 +381,7 @@ function remove() {
                         ]"
                     >
                         <Checkbox
+                            v-if="!filters.trashed"
                             class="mt-1"
                             :model-value="selected.includes(question.id)"
                             :aria-label="`Select question ${question.id}`"
