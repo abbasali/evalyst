@@ -10,12 +10,15 @@ use Illuminate\Support\Facades\DB;
 class CreateTeam
 {
     /**
-     * Create a new team and add the user as owner.
+     * Create a new course and add the user as owner.
+     *
+     * @param  array{description?: string|null, timezone?: string}  $attributes
      */
-    public function handle(User $user, string $name, bool $isPersonal = false): Team
+    public function handle(User $user, string $name, bool $isPersonal = false, array $attributes = []): Team
     {
-        return DB::transaction(function () use ($user, $name, $isPersonal) {
+        return DB::transaction(function () use ($user, $name, $isPersonal, $attributes) {
             $team = Team::create([
+                ...array_filter($attributes, fn ($value) => $value !== null),
                 'name' => $name,
                 'is_personal' => $isPersonal,
             ]);

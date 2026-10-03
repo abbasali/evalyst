@@ -35,7 +35,7 @@ class TeamMemberTest extends TestCase
         );
     }
 
-    public function test_team_member_roles_cannot_be_updated_by_non_owners()
+    public function test_team_member_roles_can_be_updated_by_any_member()
     {
         $owner = User::factory()->create();
         $admin = User::factory()->create();
@@ -52,7 +52,7 @@ class TeamMemberTest extends TestCase
                 'role' => TeamRole::Admin->value,
             ]);
 
-        $response->assertForbidden();
+        $response->assertRedirect(); // All instructors are equal (D-003).
     }
 
     public function test_team_members_can_be_removed_by_owners()
@@ -73,7 +73,7 @@ class TeamMemberTest extends TestCase
         $this->assertFalse($member->fresh()->belongsToTeam($team));
     }
 
-    public function test_team_members_cannot_be_removed_by_non_owners()
+    public function test_team_members_can_be_removed_by_any_member()
     {
         $owner = User::factory()->create();
         $admin = User::factory()->create();
@@ -88,7 +88,7 @@ class TeamMemberTest extends TestCase
             ->actingAs($admin)
             ->delete(route('teams.members.destroy', [$team, $member]));
 
-        $response->assertForbidden();
+        $response->assertRedirect(); // All instructors are equal (D-003).
     }
 
     public function test_team_owner_cannot_be_removed()
@@ -130,11 +130,11 @@ class TeamMemberTest extends TestCase
         );
     }
 
-    public function test_removed_member_current_team_is_set_to_personal_team()
+    public function test_removed_member_current_team_falls_back_to_another_course()
     {
         $owner = User::factory()->create();
         $member = User::factory()->create();
-        $personalTeam = $member->personalTeam();
+        $otherCourse = $member->currentTeam;
         $team = Team::factory()->create();
 
         $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
@@ -146,6 +146,6 @@ class TeamMemberTest extends TestCase
             ->actingAs($owner)
             ->delete(route('teams.members.destroy', [$team, $member]));
 
-        $this->assertEquals($personalTeam->id, $member->fresh()->current_team_id);
+        $this->assertEquals($otherCourse->id, $member->fresh()->current_team_id);
     }
 }

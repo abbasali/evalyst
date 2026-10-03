@@ -6,6 +6,7 @@ use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -39,13 +40,13 @@ class UserFactory extends Factory
     }
 
     /**
-     * Configure the model factory.
+     * Configure the model factory: by default every user owns one course.
      */
     public function configure(): static
     {
         return $this->afterCreating(function ($user) {
-            $team = Team::factory()->personal()->create([
-                'name' => $user->name."'s Team",
+            $team = Team::factory()->create([
+                'name' => $user->name."'s Course",
             ]);
 
             $team->members()->attach($user, [
@@ -54,6 +55,15 @@ class UserFactory extends Factory
 
             $user->switchTeam($team);
         });
+    }
+
+    /**
+     * Create the user without any course.
+     */
+    public function withoutCourse(): static
+    {
+        // Drops the course-creating callback registered in configure().
+        return $this->newInstance(['afterCreating' => new Collection]);
     }
 
     /**

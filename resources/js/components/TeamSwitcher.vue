@@ -59,13 +59,14 @@ const switchTeam = (team: Team) => {
                 return;
             }
 
-            const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-            const segment = `/${previousTeamSlug}`;
+            // Stay in the same section (e.g. /old-course/quizzes/12 → /new-course/quizzes):
+            // records from the previous course don't exist in the new one.
+            const [slug, section] = window.location.pathname
+                .split('/')
+                .filter(Boolean);
 
-            if (currentUrl.includes(segment)) {
-                router.visit(currentUrl.replace(segment, `/${team.slug}`), {
-                    replace: true,
-                });
+            if (slug === previousTeamSlug && section) {
+                router.visit(`/${team.slug}/${section}`, { replace: true });
 
                 return;
             }
@@ -119,7 +120,7 @@ onUnmounted(() => {
                                 : 'truncate font-semibold'
                         "
                     >
-                        {{ currentTeam?.name ?? 'Select team' }}
+                        {{ currentTeam?.name ?? 'Select course' }}
                     </span>
                 </div>
                 <ChevronsUpDown
@@ -139,7 +140,7 @@ onUnmounted(() => {
             :side-offset="props.inHeader ? undefined : 4"
         >
             <DropdownMenuLabel class="text-xs text-muted-foreground">
-                Teams
+                Courses
             </DropdownMenuLabel>
             <DropdownMenuItem
                 v-for="team in teams"
@@ -162,7 +163,7 @@ onUnmounted(() => {
                     @select.prevent
                 >
                     <Plus :class="plusIconClass" />
-                    <span class="text-muted-foreground">New team</span>
+                    <span class="text-muted-foreground">New course</span>
                 </DropdownMenuItem>
             </CreateTeamModal>
         </DropdownMenuContent>

@@ -58,7 +58,7 @@ const handleOpenChange = (nextOpen: boolean) => {
                     <DialogTitle>Are you sure?</DialogTitle>
                     <DialogDescription>
                         This action cannot be undone. This will permanently
-                        delete the team
+                        delete the course
                         <strong>"{{ props.team.name }}"</strong>.
                     </DialogDescription>
                 </DialogHeader>
@@ -74,7 +74,7 @@ const handleOpenChange = (nextOpen: boolean) => {
                             name="name"
                             data-test="delete-team-name"
                             v-model="confirmationName"
-                            placeholder="Enter team name"
+                            placeholder="Enter course name"
                             autocomplete="off"
                         />
                         <InputError :message="errors.name" />
@@ -92,7 +92,7 @@ const handleOpenChange = (nextOpen: boolean) => {
                         type="submit"
                         :disabled="!canDeleteTeam || processing"
                     >
-                        Delete team
+                        Delete course
                     </Button>
                 </DialogFooter>
             </Form>

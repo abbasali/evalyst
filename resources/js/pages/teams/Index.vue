@@ -5,7 +5,6 @@ import { ref } from 'vue';
 import CreateTeamModal from '@/components/CreateTeamModal.vue';
 import Heading from '@/components/Heading.vue';
 import LeaveTeamModal from '@/components/LeaveTeamModal.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Tooltip,
@@ -36,7 +35,7 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Teams',
+                title: 'Courses',
                 href: index(),
             },
         ],
@@ -45,21 +44,21 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Teams" />
+    <Head title="Courses" />
 
-    <h1 class="sr-only">Teams</h1>
+    <h1 class="sr-only">Courses</h1>
 
     <div class="flex flex-col space-y-6">
         <div class="flex items-center justify-between">
             <Heading
                 variant="small"
-                title="Teams"
-                description="Manage your teams and team memberships"
+                title="Courses"
+                description="Manage your courses and course memberships"
             />
 
             <CreateTeamModal>
                 <Button data-test="teams-new-team-button">
-                    <Plus /> New team
+                    <Plus /> New course
                 </Button>
             </CreateTeamModal>
         </div>
@@ -75,12 +74,12 @@ defineOptions({
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="font-medium">{{ team.name }}</span>
-                            <Badge v-if="team.isPersonal" variant="secondary">
-                                Personal
-                            </Badge>
                         </div>
-                        <span class="text-sm text-muted-foreground">
-                            {{ team.roleLabel }}
+                        <span
+                            v-if="team.role === 'owner'"
+                            class="text-sm text-muted-foreground"
+                        >
+                            Owner
                         </span>
                     </div>
                 </div>
@@ -99,7 +98,7 @@ defineOptions({
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p>Leave team</p>
+                                <p>Leave course</p>
                             </TooltipContent>
                         </Tooltip>
 
@@ -117,7 +116,7 @@ defineOptions({
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p>View team</p>
+                                <p>View course</p>
                             </TooltipContent>
                         </Tooltip>
 
@@ -135,7 +134,7 @@ defineOptions({
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <p>Edit team</p>
+                                <p>Edit course</p>
                             </TooltipContent>
                         </Tooltip>
                     </div>
@@ -146,7 +145,7 @@ defineOptions({
                 v-if="teams.length === 0"
                 class="py-8 text-center text-muted-foreground"
             >
-                You don't belong to any teams yet.
+                You don't belong to any courses yet.
             </p>
         </div>
     </div>

@@ -67,16 +67,6 @@ trait HasTeams
     }
 
     /**
-     * Get the user's personal team.
-     */
-    public function personalTeam(): ?Team
-    {
-        return $this->ownedTeams()
-            ->where('teams.is_personal', true)
-            ->first();
-    }
-
-    /**
      * Switch to the given team.
      */
     public function switchTeam(Team $team): bool
@@ -157,6 +147,7 @@ trait HasTeams
             role: $role?->value,
             roleLabel: $role?->label(),
             isCurrent: $this->isCurrentTeam($team),
+            timezone: $team->timezone ?? 'UTC',
         );
     }
 
@@ -176,6 +167,23 @@ trait HasTeams
             canCreateInvitation: $role?->hasPermission(TeamPermission::CreateInvitation) ?? false,
             canCancelInvitation: $role?->hasPermission(TeamPermission::CancelInvitation) ?? false,
         );
+    }
+
+    /**
+     * Switch to another course the user belongs to, or clear the current course.
+     */
+    public function switchToFallbackTeam(?Team $excluding = null): void
+    {
+        $fallback = $this->fallbackTeam($excluding);
+
+        if ($fallback) {
+            $this->switchTeam($fallback);
+
+            return;
+        }
+
+        $this->update(['current_team_id' => null]);
+        $this->setRelation('currentTeam', null);
     }
 
     public function fallbackTeam(?Team $excluding = null): ?Team

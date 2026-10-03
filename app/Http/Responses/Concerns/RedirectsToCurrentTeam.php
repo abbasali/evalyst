@@ -2,31 +2,33 @@
 
 namespace App\Http\Responses\Concerns;
 
-use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
 trait RedirectsToCurrentTeam
 {
+    /**
+     * The path to send the user to: their current course, or the "create your
+     * first course" screen when they don't belong to any course yet.
+     */
     protected function redirectPathForCurrentTeam(Request $request, string $redirect): string
-    {
-        $team = $this->currentTeam($request);
-
-        URL::defaults(['current_team' => $team->slug]);
-
-        return "/{$team->slug}{$redirect}";
-    }
-
-    protected function currentTeam(Request $request): Team
     {
         $user = $request->user();
 
         abort_if(! $user, 403);
 
-        $team = $user->currentTeam ?? $user->personalTeam();
+        $team = $user->currentTeam ?? $user->fallbackTeam();
 
-        abort_if(! $team, 403);
+        if (! $team) {
+            return route('courses.start', absolute: false);
+        }
 
-        return $team;
+        if (! $user->isCurrentTeam($team)) {
+            $user->switchTeam($team);
+        }
+
+        URL::defaults(['current_team' => $team->slug]);
+
+        return "/{$team->slug}{$redirect}";
     }
 }

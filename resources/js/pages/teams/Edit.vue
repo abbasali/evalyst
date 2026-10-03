@@ -1,24 +1,16 @@
 <script setup lang="ts">
-import { Form, Head, router } from '@inertiajs/vue3';
-import { ChevronDown, Mail, UserPlus, X } from '@lucide/vue';
+import { Form, Head } from '@inertiajs/vue3';
+import { Mail, UserPlus, X } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CancelInvitationModal from '@/components/CancelInvitationModal.vue';
 import DeleteTeamModal from '@/components/DeleteTeamModal.vue';
 import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
+import CourseFields from '@/components/courses/CourseFields.vue';
 import InviteMemberModal from '@/components/InviteMemberModal.vue';
 import RemoveMemberModal from '@/components/RemoveMemberModal.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Tooltip,
     TooltipContent,
@@ -27,9 +19,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useInitials } from '@/composables/useInitials';
 import { edit, index, update } from '@/routes/teams';
-import { update as updateMember } from '@/routes/teams/members';
 import type {
-    RoleOption,
     Team,
     TeamInvitation,
     TeamMember,
@@ -41,7 +31,7 @@ type Props = {
     members: TeamMember[];
     invitations: TeamInvitation[];
     permissions: TeamPermissions;
-    availableRoles: RoleOption[];
+    timezones: string[];
 };
 
 const props = defineProps<Props>();
@@ -50,7 +40,7 @@ defineOptions({
     layout: (props: { team: Team }) => ({
         breadcrumbs: [
             {
-                title: 'Teams',
+                title: 'Courses',
                 href: index(),
             },
             {
@@ -76,13 +66,6 @@ const pageTitle = computed(() =>
         : `View ${props.team.name}`,
 );
 
-const updateMemberRole = (member: TeamMember, newRole: string) => {
-    router.visit(updateMember([props.team.slug, member.id]), {
-        data: { role: newRole },
-        preserveScroll: true,
-    });
-};
-
 const confirmRemoveMember = (member: TeamMember) => {
     memberToRemove.value = member;
     removeMemberDialogOpen.value = true;
@@ -104,8 +87,8 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
         <div v-if="permissions.canUpdateTeam" class="space-y-6">
             <Heading
                 variant="small"
-                title="Team settings"
-                description="Update your team name and settings"
+                title="Course settings"
+                description="Name, description and timezone for this course"
             />
 
             <Form
@@ -113,17 +96,13 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                 class="space-y-6"
                 v-slot="{ errors, processing }"
             >
-                <div class="grid gap-2">
-                    <Label for="name">Team name</Label>
-                    <Input
-                        id="name"
-                        name="name"
-                        data-test="team-name-input"
-                        :default-value="team.name"
-                        required
-                    />
-                    <InputError :message="errors.name" />
-                </div>
+                <CourseFields
+                    :errors="errors"
+                    :timezones="timezones"
+                    :name="team.name"
+                    :description="team.description"
+                    :timezone="team.timezone"
+                />
 
                 <div class="flex items-center gap-4">
                     <Button
@@ -146,10 +125,10 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
             <div class="flex items-center justify-between">
                 <Heading
                     variant="small"
-                    title="Team members"
+                    title="Course members"
                     :description="
                         permissions.canCreateInvitation
-                            ? 'Manage who belongs to this team'
+                            ? 'Manage who belongs to this course'
                             : ''
                     "
                 />
@@ -192,39 +171,11 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <DropdownMenu
-                            v-if="
-                                member.role !== 'owner' &&
-                                permissions.canUpdateMember
-                            "
+                        <Badge
+                            v-if="member.role === 'owner'"
+                            variant="secondary"
                         >
-                            <DropdownMenuTrigger as-child>
-                                <Button
-                                    data-test="member-role-trigger"
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    {{ member.role_label }}
-                                    <ChevronDown
-                                        class="ml-2 h-4 w-4 opacity-50"
-                                    />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem
-                                    v-for="role in availableRoles"
-                                    :key="role.value"
-                                    data-test="member-role-option"
-                                    @click="
-                                        updateMemberRole(member, role.value)
-                                    "
-                                >
-                                    {{ role.label }}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Badge v-else variant="secondary">
-                            {{ member.role_label }}
+                            Owner
                         </Badge>
 
                         <TooltipProvider
@@ -280,7 +231,12 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                                 {{ invitation.email }}
                             </div>
                             <div class="text-sm text-muted-foreground">
-                                {{ invitation.role_label }}
+                                Invited
+                                {{
+                                    new Date(
+                                        invitation.created_at,
+                                    ).toLocaleDateString()
+                                }}
                             </div>
                         </div>
                     </div>
@@ -313,8 +269,8 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
         >
             <Heading
                 variant="small"
-                title="Delete team"
-                description="Permanently delete your team"
+                title="Delete course"
+                description="Permanently delete your course"
             />
             <div
                 class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10"
@@ -331,7 +287,7 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                     data-test="delete-team-button"
                     variant="destructive"
                     @click="deleteDialogOpen = true"
-                    >Delete team</Button
+                    >Delete course</Button
                 >
             </div>
         </div>
@@ -340,7 +296,6 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
     <InviteMemberModal
         v-if="permissions.canCreateInvitation"
         :team="team"
-        :available-roles="availableRoles"
         :open="inviteDialogOpen"
         @update:open="inviteDialogOpen = $event"
     />

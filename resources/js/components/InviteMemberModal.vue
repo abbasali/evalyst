@@ -14,19 +14,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { store as storeInvitation } from '@/routes/teams/invitations';
-import type { RoleOption, Team } from '@/types';
+import type { Team } from '@/types';
 
 type Props = {
     team: Team;
-    availableRoles: RoleOption[];
     open: boolean;
 };
 
@@ -35,14 +27,12 @@ const emit = defineEmits<{
     'update:open': [value: boolean];
 }>();
 
-const inviteRole = ref('member');
 const formKey = ref(0);
 
 function handleOpenChange(value: boolean) {
     emit('update:open', value);
 
     if (!value) {
-        inviteRole.value = 'member';
         formKey.value++;
     }
 }
@@ -59,9 +49,10 @@ function handleOpenChange(value: boolean) {
                 @success="emit('update:open', false)"
             >
                 <DialogHeader>
-                    <DialogTitle>Invite a team member</DialogTitle>
+                    <DialogTitle>Invite a course member</DialogTitle>
                     <DialogDescription>
-                        Send an invitation to join this team.
+                        Instructors in a course share everything: questions,
+                        students, quizzes and grading.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -77,29 +68,6 @@ function handleOpenChange(value: boolean) {
                             required
                         />
                         <InputError :message="errors.email" />
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label for="role">Role</Label>
-                        <Select
-                            v-model="inviteRole"
-                            name="role"
-                            data-test="invite-role"
-                        >
-                            <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="role in props.availableRoles"
-                                    :key="role.value"
-                                    :value="role.value"
-                                >
-                                    {{ role.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <InputError :message="errors.role" />
                     </div>
                 </div>
 

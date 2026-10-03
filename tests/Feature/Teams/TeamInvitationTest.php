@@ -33,10 +33,11 @@ class TeamInvitationTest extends TestCase
 
         $response->assertRedirect(route('teams.edit', $team));
 
+        // All instructors are equal (D-003): invitations always use the admin role.
         $this->assertDatabaseHas('team_invitations', [
             'team_id' => $team->id,
             'email' => 'invited@example.com',
-            'role' => TeamRole::Member->value,
+            'role' => TeamRole::Admin->value,
         ]);
     }
 
@@ -57,10 +58,11 @@ class TeamInvitationTest extends TestCase
         $mail = (new TeamInvitationNotification($invitation))->toMail($invitedUser);
 
         $this->assertSame(route('login', ['invitation' => $invitation->code]), $mail->actionUrl);
-        $this->assertStringContainsString('dashboard', implode(' ', $mail->introLines));
+        $this->assertStringContainsString('course', $mail->subject);
+        $this->assertStringContainsString('log in', strtolower(implode(' ', $mail->introLines)));
     }
 
-    public function test_invitation_email_for_unknown_users_uses_login_route()
+    public function test_invitation_email_for_unknown_users_uses_register_route()
     {
         $owner = User::factory()->create();
         $team = Team::factory()->create();
@@ -75,8 +77,8 @@ class TeamInvitationTest extends TestCase
 
         $mail = (new TeamInvitationNotification($invitation))->toMail((object) []);
 
-        $this->assertSame(route('login', ['invitation' => $invitation->code]), $mail->actionUrl);
-        $this->assertStringContainsString('log in', strtolower(implode(' ', $mail->introLines)));
+        $this->assertSame(route('register', ['invitation' => $invitation->code]), $mail->actionUrl);
+        $this->assertStringContainsString('create your instructor account', strtolower(implode(' ', $mail->introLines)));
     }
 
     public function test_team_invitations_can_be_created_by_admins()
@@ -145,7 +147,7 @@ class TeamInvitationTest extends TestCase
         $response->assertSessionHasErrors('email');
     }
 
-    public function test_team_invitations_cannot_be_created_by_members()
+    public function test_team_invitations_can_be_created_by_members()
     {
         $owner = User::factory()->create();
         $member = User::factory()->create();
@@ -161,7 +163,8 @@ class TeamInvitationTest extends TestCase
                 'role' => TeamRole::Member->value,
             ]);
 
-        $response->assertForbidden();
+        $response->assertRedirect();
+        $this->assertDatabaseHas('team_invitations', ['team_id' => $team->id, 'email' => 'invited@example.com']);
     }
 
     public function test_team_invitations_can_be_cancelled_by_owners()
@@ -231,7 +234,7 @@ class TeamInvitationTest extends TestCase
             ->actingAs($invitedUser)
             ->delete(route('invitations.decline', $invitation));
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect();
 
         $this->assertDatabaseMissing('team_invitations', [
             'id' => $invitation->id,

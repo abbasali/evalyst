@@ -4,6 +4,8 @@ export type Team = {
     id: number;
     name: string;
     slug: string;
+    description?: string | null;
+    timezone?: string;
     isPersonal: boolean;
     role?: TeamRole;
     roleLabel?: string;
@@ -30,6 +32,7 @@ export type TeamInvitation = {
 export type TeamInvitationContext = {
     code: string;
     teamName: string;
+    email?: string;
 };
 
 export type DashboardInvitation = {

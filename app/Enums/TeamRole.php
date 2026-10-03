@@ -24,13 +24,12 @@ enum TeamRole: string
     public function permissions(): array
     {
         return match ($this) {
+            // All instructors are equal; only the owner can delete the course (D-003).
             self::Owner => TeamPermission::cases(),
-            self::Admin => [
-                TeamPermission::UpdateTeam,
-                TeamPermission::CreateInvitation,
-                TeamPermission::CancelInvitation,
-            ],
-            self::Member => [],
+            self::Admin, self::Member => array_values(array_filter(
+                TeamPermission::cases(),
+                fn (TeamPermission $permission) => $permission !== TeamPermission::DeleteTeam,
+            )),
         };
     }
 

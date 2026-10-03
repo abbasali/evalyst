@@ -16,7 +16,9 @@ class SaveTeamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', new TeamName],
+            'name' => ['required', 'string', 'max:100', new TeamName],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'timezone' => ['sometimes', 'required', 'string', 'timezone:all'],
         ];
     }
 }

@@ -39,14 +39,14 @@ class TeamMemberController extends Controller
     {
         Gate::authorize('removeMember', $team);
 
-        abort_if($team->owner()?->is($user), 403, __('The team owner cannot be removed.'));
+        abort_if($team->owner()?->is($user), 403, __('The course owner cannot be removed.'));
 
         $team->memberships()
             ->where('user_id', $user->id)
             ->delete();
 
         if ($user->isCurrentTeam($team)) {
-            $user->switchTeam($user->personalTeam());
+            $user->switchToFallbackTeam($team);
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Member removed.')]);

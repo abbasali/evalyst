@@ -81,9 +81,16 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn (Request $request) => Inertia::render('auth/Register', [
-            'teamInvitation' => $this->teamInvitation($request),
-        ]));
+        // Accounts are invite-only (D-004): the register screen needs a valid invitation.
+        Fortify::registerView(function (Request $request) {
+            $invitation = $this->teamInvitation($request);
+
+            abort_if($invitation === null, 404);
+
+            return Inertia::render('auth/Register', [
+                'teamInvitation' => $invitation,
+            ]);
+        });
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/TwoFactorChallenge'));
 
@@ -117,7 +124,7 @@ class FortifyServiceProvider extends ServiceProvider
     /**
      * Get the pending team invitation context for auth pages.
      *
-     * @return array{code: string, teamName: string}|null
+     * @return array{code: string, teamName: string, email: string}|null
      */
     private function teamInvitation(Request $request): ?array
     {
@@ -127,14 +134,7 @@ class FortifyServiceProvider extends ServiceProvider
             return null;
         }
 
-        $invitation = TeamInvitation::query()
-            ->with('team')
-            ->where('code', $invitationCode)
-            ->whereNull('accepted_at')
-            ->where(fn ($query) => $query
-                ->whereNull('expires_at')
-                ->orWhere('expires_at', '>=', now()))
-            ->first();
+        $invitation = TeamInvitation::findPending($invitationCode);
 
         if (! $invitation) {
             return null;
@@ -143,6 +143,7 @@ class FortifyServiceProvider extends ServiceProvider
         return [
             'code' => $invitation->code,
             'teamName' => $invitation->team->name,
+            'email' => $invitation->email,
         ];
     }
 }
