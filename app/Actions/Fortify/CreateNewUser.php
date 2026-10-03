@@ -2,25 +2,21 @@
 
 namespace App\Actions\Fortify;
 
-use App\Actions\Teams\CreateTeam;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Models\TeamInvitation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules, ProfileValidationRules;
 
-    public function __construct(private CreateTeam $createTeam)
-    {
-        //
-    }
-
     /**
-     * Validate and create a newly registered user.
+     * Create a user from a course invitation. Accounts are invite-only (D-004).
      *
      * @param  array<string, string>  $input
      */
@@ -29,16 +25,41 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
+            'invitation' => ['required', 'string'],
         ])->validate();
 
-        return DB::transaction(function () use ($input) {
+        $invitation = TeamInvitation::findPending($input['invitation']);
+
+        if (! $invitation) {
+            throw ValidationException::withMessages([
+                'email' => __('This invitation is no longer valid. Ask a colleague to invite you again.'),
+            ]);
+        }
+
+        if (strtolower($invitation->email) !== strtolower($input['email'])) {
+            throw ValidationException::withMessages([
+                'email' => __('This invitation was sent to a different email address.'),
+            ]);
+        }
+
+        return DB::transaction(function () use ($input, $invitation) {
             $user = User::create([
                 'name' => $input['name'],
-                'email' => $input['email'],
+                'email' => strtolower($invitation->email),
                 'password' => $input['password'],
             ]);
 
-            $this->createTeam->handle($user, $user->name."'s Team", isPersonal: true);
+            // The invitation email proves ownership of the address.
+            $user->forceFill(['email_verified_at' => now()])->save();
+
+            $invitation->team->memberships()->create([
+                'user_id' => $user->id,
+                'role' => $invitation->role,
+            ]);
+
+            $invitation->update(['accepted_at' => now()]);
+
+            $user->switchTeam($invitation->team);
 
             return $user;
         });

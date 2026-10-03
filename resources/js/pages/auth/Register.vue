@@ -14,13 +14,13 @@ import type { TeamInvitationContext } from '@/types';
 
 defineProps<{
     passwordRules: string;
-    teamInvitation?: TeamInvitationContext | null;
+    teamInvitation: TeamInvitationContext;
 }>();
 
 defineOptions({
     layout: {
-        title: 'Create an account',
-        description: 'Enter your details below to create your account',
+        title: 'Create your instructor account',
+        description: 'You were invited to join a course on Evalyst',
     },
 });
 </script>
@@ -28,11 +28,7 @@ defineOptions({
 <template>
     <Head title="Register" />
 
-    <TeamInvitationAlert
-        v-if="teamInvitation"
-        :invitation="teamInvitation"
-        action="Register"
-    />
+    <TeamInvitationAlert :invitation="teamInvitation" action="Register" />
 
     <Form
         v-bind="store.form()"
@@ -40,6 +36,8 @@ defineOptions({
         v-slot="{ errors, processing }"
         class="flex flex-col gap-6"
     >
+        <input type="hidden" name="invitation" :value="teamInvitation.code" />
+
         <div class="grid gap-6">
             <div class="grid gap-2">
                 <Label for="name">Name</Label>
@@ -65,7 +63,9 @@ defineOptions({
                     :tabindex="2"
                     autocomplete="email"
                     name="email"
-                    placeholder="email@example.com"
+                    :default-value="teamInvitation.email"
+                    readonly
+                    class="bg-muted"
                 />
                 <InputError :message="errors.email" />
             </div>
@@ -114,13 +114,11 @@ defineOptions({
             Already have an account?
             <TextLink
                 :href="
-                    teamInvitation
-                        ? login.url({
-                              query: {
-                                  invitation: teamInvitation.code,
-                              },
-                          })
-                        : login()
+                    login.url({
+                        query: {
+                            invitation: teamInvitation.code,
+                        },
+                    })
                 "
                 class="underline underline-offset-4"
                 :tabindex="6"

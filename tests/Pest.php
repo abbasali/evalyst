@@ -1,5 +1,8 @@
 <?php
 
+use App\Enums\TeamRole;
+use App\Models\Team;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +47,22 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Log in as an instructor who belongs to a course (a fresh one unless given).
+ *
+ * @return array{0: User, 1: Team}
+ */
+function actingAsInstructor(?Team $team = null): array
 {
-    // ..
+    $user = User::factory()->create();
+    $team ??= $user->currentTeam;
+
+    if (! $user->belongsToTeam($team)) {
+        $team->members()->attach($user, ['role' => TeamRole::Admin->value]);
+    }
+
+    $user->switchTeam($team);
+    test()->actingAs($user);
+
+    return [$user, $team];
 }

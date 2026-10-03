@@ -26,7 +26,8 @@ class TeamInvitationController extends Controller
 
         $invitation = $team->invitations()->create([
             'email' => $request->validated('email'),
-            'role' => TeamRole::from($request->validated('role')),
+            // All instructors in a course are equal (D-003).
+            'role' => TeamRole::Admin,
             'invited_by' => $request->user()->id,
             'expires_at' => now()->addDays(3),
         ]);
@@ -89,6 +90,6 @@ class TeamInvitationController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invitation declined.')]);
 
-        return to_route('dashboard');
+        return back();
     }
 }

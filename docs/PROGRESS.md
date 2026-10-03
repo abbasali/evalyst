@@ -25,14 +25,14 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M01 — Instructors & courses → [milestones/M01-instructors-and-courses.md](milestones/M01-instructors-and-courses.md)
 
-- [ ] **M01.1** Rename "Team" to "Course" in all UI text (code names stay `Team`)
-- [ ] **M01.2** Turn off public registration; accepting an invitation creates the account
-- [ ] **M01.3** No personal teams; `evalyst:make-instructor` command; empty-dashboard "Create your first course"
-- [ ] **M01.4** Equal permissions for all members (D-003); hide role UI; owner-only delete
-- [ ] **M01.5** Course settings: description + timezone
-- [ ] **M01.6** `BelongsToCourse` trait, scoped instructor route group, cross-course isolation test helper
-- [ ] **M01.7** Course-aware sidebar navigation skeleton (Dashboard, Question Bank, Quizzes, Assignments, Students, Review)
-- [ ] **M01.8** `audit_logs` table + `RecordAudit` action (used by every later manual override)
+- [x] **M01.1** Rename "Team" to "Course" in all UI text (code names stay `Team`)
+- [x] **M01.2** Turn off public registration; accepting an invitation creates the account — kept Fortify's register screen; it 404s without a valid invitation (D-015)
+- [x] **M01.3** No personal teams; `evalyst:make-instructor` command; empty-dashboard "Create your first course" — onboarding at `/courses/start` (`pages/onboarding/Start.vue`)
+- [x] **M01.4** Equal permissions for all members (D-003); hide role UI; owner-only delete
+- [x] **M01.5** Course settings: description + timezone
+- [x] **M01.6** `BelongsToCourse` trait, scoped instructor route group, cross-course isolation test helper — scoped bindings resolve children through the `Team` relation of the same plural name; no policy helper trait yet (policies added per resource)
+- [x] **M01.7** Course-aware sidebar navigation skeleton (Dashboard, Question Bank, Quizzes, Assignments, Students, Review)
+- [x] **M01.8** `audit_logs` table + `RecordAudit` action (used by every later manual override)
 
 ## M02 — Students roster → [milestones/M02-students.md](milestones/M02-students.md)
 

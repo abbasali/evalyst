@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Actions\Teams\CreateTeam;
-use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Teams\DeleteTeamRequest;
 use App\Http\Requests\Teams\SaveTeamRequest;
@@ -36,11 +35,15 @@ class TeamController extends Controller
      */
     public function store(SaveTeamRequest $request, CreateTeam $createTeam): RedirectResponse
     {
-        $team = $createTeam->handle($request->user(), $request->validated('name'));
+        $team = $createTeam->handle(
+            $request->user(),
+            $request->validated('name'),
+            attributes: $request->safe()->only(['description', 'timezone']),
+        );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Team created.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Course created.')]);
 
-        return to_route('teams.edit', ['team' => $team->slug]);
+        return to_route('dashboard', ['current_team' => $team->slug]);
     }
 
     /**
@@ -55,8 +58,11 @@ class TeamController extends Controller
                 'id' => $team->id,
                 'name' => $team->name,
                 'slug' => $team->slug,
+                'description' => $team->description,
+                'timezone' => $team->timezone,
                 'isPersonal' => $team->is_personal,
             ],
+            'timezones' => timezone_identifiers_list(),
             'members' => $team->members()->get()->map(function (User $member) {
                 /** @var Membership $membership */
                 $membership = $member->getRelation('pivot');
@@ -81,7 +87,6 @@ class TeamController extends Controller
                     'created_at' => $invitation->created_at->toISOString(),
                 ]),
             'permissions' => $user->toTeamPermissions($team),
-            'availableRoles' => TeamRole::assignable(),
         ]);
     }
 
@@ -95,12 +100,12 @@ class TeamController extends Controller
         $team = DB::transaction(function () use ($request, $team) {
             $team = Team::whereKey($team->id)->lockForUpdate()->firstOrFail();
 
-            $team->update(['name' => $request->validated('name')]);
+            $team->update($request->safe()->only(['name', 'description', 'timezone']));
 
             return $team;
         });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Team updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Course updated.')]);
 
         return to_route('teams.edit', ['team' => $team->slug]);
     }
@@ -126,21 +131,17 @@ class TeamController extends Controller
 
         $user = $request->user();
 
-        $fallbackTeam = $user->isCurrentTeam($team)
-            ? $user->fallbackTeam($team)
-            : null;
-
         $team->memberships()
             ->where('user_id', $user->id)
             ->delete();
 
-        if ($fallbackTeam) {
-            $user->switchTeam($fallbackTeam);
+        if ($user->isCurrentTeam($team)) {
+            $user->switchToFallbackTeam($team);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('You left the team ":name"', ['name' => $team->name])]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('You left the course ":name"', ['name' => $team->name])]);
 
-        return to_route('teams.index');
+        return $user->current_team_id ? to_route('teams.index') : to_route('courses.start');
     }
 
     /**
@@ -149,26 +150,24 @@ class TeamController extends Controller
     public function destroy(DeleteTeamRequest $request, Team $team): RedirectResponse
     {
         $user = $request->user();
-        $fallbackTeam = $user->isCurrentTeam($team)
-            ? $user->fallbackTeam($team)
-            : null;
+        $wasCurrent = $user->isCurrentTeam($team);
 
         DB::transaction(function () use ($user, $team) {
             User::where('current_team_id', $team->id)
                 ->where('id', '!=', $user->id)
-                ->each(fn (User $affectedUser) => $affectedUser->switchTeam($affectedUser->personalTeam()));
+                ->each(fn (User $affectedUser) => $affectedUser->switchToFallbackTeam($team));
 
             $team->invitations()->delete();
             $team->memberships()->delete();
             $team->delete();
         });
 
-        if ($fallbackTeam) {
-            $user->switchTeam($fallbackTeam);
+        if ($wasCurrent) {
+            $user->switchToFallbackTeam($team);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Team deleted.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Course deleted.')]);
 
-        return to_route('teams.index');
+        return $user->current_team_id ? to_route('teams.index') : to_route('courses.start');
     }
 }

@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Routing\Route as RouteElement;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Translation\PotentiallyTranslatedString;
 
 class TeamName implements ValidationRule
@@ -19,8 +20,9 @@ class TeamName implements ValidationRule
     {
         $name = strtolower(trim($value));
 
-        if (in_array($name, $this->reservedNames(), true)) {
-            $fail(__('This team name is reserved and cannot be used.'));
+        // The slug becomes the first URL segment, so check it too.
+        if (in_array($name, $this->reservedNames(), true) || in_array(Str::slug($name), $this->reservedNames(), true)) {
+            $fail(__('This course name is reserved and cannot be used.'));
         }
     }
 

@@ -3,6 +3,7 @@
 namespace App\Notifications\Teams;
 
 use App\Models\TeamInvitation as TeamInvitationModel;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -37,18 +38,27 @@ class TeamInvitation extends Notification implements ShouldQueue
     {
         $team = $this->invitation->team;
         $inviter = $this->invitation->inviter;
+        $hasAccount = User::query()
+            ->whereRaw('LOWER(email) = ?', [strtolower($this->invitation->email)])
+            ->exists();
 
         return (new MailMessage)
-            ->subject(__("You've been invited to join :teamName", ['teamName' => $team->name]))
-            ->line(__(':inviterName has invited you to join the :teamName team.', [
+            ->subject(__("You've been invited to the course :teamName", ['teamName' => $team->name]))
+            ->line(__(':inviterName has invited you to teach the :teamName course on :app.', [
                 'inviterName' => $inviter->name,
                 'teamName' => $team->name,
+                'app' => config('app.name'),
             ]))
-            ->line(__('Log in and visit your dashboard to accept or decline this invitation.'))
+            ->line($hasAccount
+                ? __('Log in to accept or decline the invitation.')
+                : __('Create your instructor account to get started.'))
             ->action(
-                __('Log in'),
-                route('login', ['invitation' => $this->invitation->code]),
-            );
+                $hasAccount ? __('Log in') : __('Create account'),
+                route($hasAccount ? 'login' : 'register', ['invitation' => $this->invitation->code]),
+            )
+            ->line(__('This invitation expires :date.', [
+                'date' => $this->invitation->expires_at?->diffForHumans() ?? __('never'),
+            ]));
     }
 
     /**

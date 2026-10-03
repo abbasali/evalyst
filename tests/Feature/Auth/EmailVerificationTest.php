@@ -34,7 +34,7 @@ class EmailVerificationTest extends TestCase
     public function test_email_can_be_verified()
     {
         $user = User::factory()->unverified()->create();
-        $team = $user->personalTeam();
+        $team = $user->currentTeam;
 
         Event::fake();
 
@@ -102,7 +102,7 @@ class EmailVerificationTest extends TestCase
     public function test_already_verified_user_visiting_verification_link_is_redirected_without_firing_event_again(): void
     {
         $user = User::factory()->create();
-        $team = $user->personalTeam();
+        $team = $user->currentTeam;
 
         Event::fake();
 

@@ -90,6 +90,21 @@ class TeamInvitation extends Model
     }
 
     /**
+     * Find a pending (not accepted, not expired) invitation by its code.
+     */
+    public static function findPending(string $code): ?self
+    {
+        return static::query()
+            ->with('team')
+            ->where('code', $code)
+            ->whereNull('accepted_at')
+            ->where(fn ($query) => $query
+                ->whereNull('expires_at')
+                ->orWhere('expires_at', '>=', now()))
+            ->first();
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

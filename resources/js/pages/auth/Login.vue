@@ -111,13 +111,16 @@ defineProps<{
             </Button>
         </div>
 
-        <div class="text-center text-sm text-muted-foreground">
+        <div
+            v-if="teamInvitation"
+            class="text-center text-sm text-muted-foreground"
+        >
             Don't have an account?
             <TextLink
                 :href="
                     register({
                         query: {
-                            invitation: teamInvitation?.code,
+                            invitation: teamInvitation.code,
                         },
                     })
                 "

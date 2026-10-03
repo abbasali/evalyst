@@ -58,3 +58,10 @@ The `audit_logs` table and the `RecordAudit` action move to **M01.8**, so every 
 
 **D-014 — Two queues only: `ai` and `default`** · 2026-10-03
 GitHub ingestion runs inside `GradeSubmission` on the `ai` queue, so a separate `github` queue isn't needed. GitHub rate limits are handled by `release()`-ing the job (see 04-github-ingestion.md).
+
+**D-015 — Invite-only sign-up reuses Fortify's register screen** · 2026-10-03
+Fortify registration stays enabled, but `/register` returns 404 unless `?invitation=<code>` is a pending invitation. `CreateNewUser` requires the code, forces the invitation's email, marks the user verified, creates the membership and accepts the invitation in one transaction. The invitation mail links to register (no account yet) or to login (an account exists).
+_Why:_ it's less code than a separate `InvitationRegistrationController`, and the starter kit's register page already shows invitation context.
+
+**D-016 — Every factory user owns a regular course** · 2026-10-03
+`UserFactory` creates a non-personal course owned by the user. `User::factory()->withoutCourse()` skips this. `personalTeam()` is removed. When a user loses their current course (removed, left, deleted), they fall back to another course, or to none, in which case they land on `/courses/start`.
