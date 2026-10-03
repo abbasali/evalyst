@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Instructor;
 use App\Http\Controllers\Controller;
 use App\Models\Tag;
 use App\Models\Team;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,8 +21,15 @@ class TagController extends Controller
     {
         $name = $this->validatedName($request);
 
-        $tag = $currentTeam->tags()->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first()
-            ?? $currentTeam->tags()->create(['name' => $name]);
+        $find = fn () => $currentTeam->tags()->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first();
+
+        try {
+            $tag = $find() ?? $currentTeam->tags()->create(['name' => $name]);
+        } catch (UniqueConstraintViolationException) {
+            $tag = $find(); // created concurrently by a colleague
+        }
+
+        abort_if($tag === null, 409);
 
         return response()->json(['id' => $tag->id, 'name' => $tag->name], $tag->wasRecentlyCreated ? 201 : 200);
     }

@@ -2,15 +2,12 @@
 
 namespace App\Http\Requests\Instructor;
 
-use App\Enums\ChoiceScoringPolicy;
-use App\Enums\CodeLanguage;
-use App\Enums\Difficulty;
 use App\Enums\QuestionType;
 use App\Models\Question;
 use App\Models\Team;
+use App\Support\QuestionRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class QuestionRequest extends FormRequest
@@ -22,29 +19,20 @@ class QuestionRequest extends FormRequest
     {
         /** @var Team $team */
         $team = $this->route('current_team');
-        $type = $this->questionType();
 
-        $optionRules = $type?->isChoice() ? [
-            'options' => ['required', 'array', 'min:'.($type === QuestionType::SingleChoice ? 2 : 3), 'max:8'],
-            'options.*.body' => ['required', 'string', 'max:2000', 'distinct:ignore_case'],
-            'options.*.is_correct' => ['required', 'boolean'],
-        ] : [];
-
-        return [
-            'type' => ['required', Rule::enum(QuestionType::class)],
-            'body' => ['required', 'string', 'max:20000'],
-            'code_language' => [Rule::requiredIf($type === QuestionType::OpenCode), 'nullable', Rule::enum(CodeLanguage::class)],
-            'default_marks' => ['required', 'numeric', 'min:0.5', 'max:100', 'multiple_of:0.5'],
-            'scoring_policy' => [Rule::requiredIf($type === QuestionType::MultipleChoice), 'nullable', Rule::enum(ChoiceScoringPolicy::class)],
-            'model_answer' => [Rule::requiredIf((bool) $type?->isOpen()), 'nullable', 'string', 'max:20000'],
-            'rubric' => ['nullable', 'string', 'max:10000'],
-            'explanation' => ['nullable', 'string', 'max:10000'],
-            'difficulty' => ['nullable', Rule::enum(Difficulty::class)],
+        $rules = [
+            ...QuestionRules::rules($team, $this->questionType()),
             'needs_verification' => ['sometimes', 'boolean'],
-            'tag_ids' => ['array', 'max:10'],
-            'tag_ids.*' => ['integer', Rule::exists('tags', 'id')->where('team_id', $team->id)],
-            ...$optionRules,
         ];
+
+        // Student-facing fields of a locked question are ignored, so don't validate them (D-009).
+        if ($this->isLocked()) {
+            foreach (['type', 'body', 'code_language', 'options', 'options.*.body', 'options.*.is_correct'] as $field) {
+                $rules[$field] = ['exclude'];
+            }
+        }
+
+        return $rules;
     }
 
     /**
@@ -55,21 +43,12 @@ class QuestionRequest extends FormRequest
         return [function (Validator $validator) {
             $type = $this->questionType();
 
-            if (! $type?->isChoice() || $validator->errors()->has('options')) {
+            if (! $type || $this->isLocked() || $validator->errors()->hasAny(['options', 'options.*'])) {
                 return;
             }
 
-            /** @var array<int, array{is_correct?: mixed}> $options */
-            $options = (array) $this->input('options', []);
-            $correct = count(array_filter($options, fn (array $option) => filter_var($option['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN)));
-            $total = count($options);
-
-            if ($type === QuestionType::SingleChoice && $correct !== 1) {
-                $validator->errors()->add('options', __('Mark exactly one option as correct.'));
-            }
-
-            if ($type === QuestionType::MultipleChoice && ($correct < 2 || $correct === $total)) {
-                $validator->errors()->add('options', __('Mark at least two correct options and leave at least one incorrect.'));
+            if ($error = QuestionRules::correctOptionsError($type, (array) $this->input('options', []))) {
+                $validator->errors()->add('options', $error);
             }
         }];
     }
@@ -89,12 +68,20 @@ class QuestionRequest extends FormRequest
         ];
     }
 
-    private function questionType(): ?QuestionType
+    private function isLocked(): bool
     {
         $question = $this->route('question');
 
+        return $question instanceof Question && $question->isLocked();
+    }
+
+    private function questionType(): ?QuestionType
+    {
         // A locked question keeps its type; its student-facing fields are frozen (D-009).
-        if ($question instanceof Question && $question->isLocked()) {
+        if ($this->isLocked()) {
+            /** @var Question $question */
+            $question = $this->route('question');
+
             return $question->type;
         }
 

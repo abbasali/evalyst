@@ -299,6 +299,7 @@ function remove() {
                         <TagSelect
                             v-model="filters.tags"
                             :tags="tags"
+                            :creatable="false"
                             placeholder="Filter by tags…"
                         />
                     </div>
@@ -325,7 +326,7 @@ function remove() {
             </div>
 
             <div
-                v-if="selected.length"
+                v-if="selected.length && !filters.trashed"
                 class="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm"
             >
                 <span class="font-medium">{{ selected.length }} selected</span>
@@ -370,6 +371,7 @@ function remove() {
                     class="flex items-center gap-3 border-b bg-muted/50 px-4 py-2.5 text-xs text-muted-foreground"
                 >
                     <Checkbox
+                        v-if="!filters.trashed"
                         :model-value="allSelected"
                         aria-label="Select all on this page"
                         @update:model-value="toggleAll"
@@ -387,6 +389,7 @@ function remove() {
                         ]"
                     >
                         <Checkbox
+                            v-if="!filters.trashed"
                             class="mt-1"
                             :model-value="selected.includes(question.id)"
                             :aria-label="`Select question ${question.id}`"

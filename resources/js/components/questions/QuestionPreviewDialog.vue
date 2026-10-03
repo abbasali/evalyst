@@ -26,6 +26,7 @@ const { slug } = useCourse();
 const http = useHttp<Record<string, never>, Question>();
 const question = ref<Question | null>(null);
 const showAnswers = ref(false);
+const failed = ref(false);
 
 watch(
     () => [open.value, props.questionId] as const,
@@ -35,8 +36,19 @@ watch(
         }
 
         question.value = null;
+        failed.value = false;
         showAnswers.value = false;
-        question.value = await http.get(show.url([slug.value, id]));
+
+        try {
+            const loaded = await http.get(show.url([slug.value, id]));
+
+            // Ignore a slow response for a question that's no longer shown.
+            if (props.questionId === id) {
+                question.value = loaded;
+            }
+        } catch {
+            failed.value = true;
+        }
     },
     { immediate: true },
 );
@@ -63,7 +75,13 @@ watch(
                 </DialogDescription>
             </DialogHeader>
 
-            <div v-if="!question" class="flex justify-center py-10">
+            <p
+                v-if="failed"
+                class="py-10 text-center text-sm text-muted-foreground"
+            >
+                This question couldn't be loaded.
+            </p>
+            <div v-else-if="!question" class="flex justify-center py-10">
                 <Spinner class="size-6" />
             </div>
 

@@ -116,7 +116,7 @@ function add() {
                     variant="ghost"
                     size="icon"
                     class="size-7"
-                    :disabled="options.length <= 2"
+                    :disabled="options.length <= (multiple ? 3 : 2)"
                     aria-label="Remove option"
                     @click="remove(index)"
                 >

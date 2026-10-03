@@ -2,14 +2,19 @@
 import { useHttp } from '@inertiajs/vue3';
 import { onClickOutside } from '@vueuse/core';
 import { Plus, Tag as TagIcon, X } from '@lucide/vue';
-import { computed, ref, useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useCourse } from '@/composables/useCourse';
 import { store as storeTag } from '@/routes/tags';
 import type { TagSummary } from '@/types';
 
 const props = withDefaults(
-    defineProps<{ tags: TagSummary[]; max?: number; placeholder?: string }>(),
-    { max: 10, placeholder: 'Add tags…' },
+    defineProps<{
+        tags: TagSummary[];
+        max?: number;
+        placeholder?: string;
+        creatable?: boolean;
+    }>(),
+    { max: 10, placeholder: 'Add tags…', creatable: true },
 );
 const selected = defineModel<number[]>({ required: true });
 
@@ -21,6 +26,19 @@ const root = useTemplateRef<HTMLElement>('root');
 const http = useHttp({ name: '' });
 
 onClickOutside(root, () => (open.value = false));
+
+// Keep in sync after renames/deletes, but keep tags created here since.
+watch(
+    () => props.tags,
+    (tags) => {
+        const created = available.value.filter(
+            (tag) =>
+                !tags.some((t) => t.id === tag.id) &&
+                tag.questions_count === undefined,
+        );
+        available.value = [...tags, ...created];
+    },
+);
 
 const selectedTags = computed(() =>
     selected.value
@@ -41,6 +59,7 @@ const canCreate = computed(() => {
     const term = query.value.trim().toLowerCase();
 
     return (
+        props.creatable &&
         term.length > 0 &&
         term.length <= 40 &&
         !available.value.some((tag) => tag.name.toLowerCase() === term)
@@ -61,8 +80,18 @@ function remove(id: number) {
 }
 
 async function create() {
+    if (http.processing) {
+        return;
+    }
+
     http.name = query.value.trim();
-    const tag = (await http.post(storeTag.url(slug.value))) as TagSummary;
+    let tag: TagSummary;
+
+    try {
+        tag = (await http.post(storeTag.url(slug.value))) as TagSummary;
+    } catch {
+        return; // validation errors are shown via http.errors
+    }
 
     if (!available.value.some((existing) => existing.id === tag.id)) {
         available.value.push(tag);
@@ -118,6 +147,9 @@ function onEnter() {
             />
         </div>
 
+        <p v-if="http.errors.name" class="mt-1 text-xs text-destructive">
+            {{ http.errors.name }}
+        </p>
         <div
             v-if="open && (suggestions.length || canCreate)"
             class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md"

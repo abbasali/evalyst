@@ -143,10 +143,12 @@ function submit(addAnother = false) {
     }));
 
     const options = {
-        preserveScroll: true,
+        preserveScroll: !addAnother,
         onSuccess: () => {
             if (addAnother) {
                 form.reset();
+                window.scrollTo({ top: 0 });
+                document.getElementById('body')?.focus();
             }
         },
     };
@@ -160,6 +162,13 @@ function submit(addAnother = false) {
 
 const errors = computed(
     () => form.errors as Record<string, string | undefined>,
+);
+const tagError = computed(
+    () =>
+        errors.value.tag_ids ??
+        Object.entries(errors.value).find(([key]) =>
+            key.startsWith('tag_ids.'),
+        )?.[1],
 );
 </script>
 
@@ -361,6 +370,7 @@ const errors = computed(
                         </div>
                     </div>
                     <InputError :message="errors.default_marks" />
+                    <InputError :message="errors.difficulty" />
 
                     <div
                         v-if="form.type === 'multiple_choice'"
@@ -388,7 +398,7 @@ const errors = computed(
                     <div class="space-y-2">
                         <Label>Tags</Label>
                         <TagSelect v-model="form.tag_ids" :tags="tags" />
-                        <InputError :message="errors.tag_ids" />
+                        <InputError :message="tagError" />
                     </div>
 
                     <label
