@@ -65,3 +65,6 @@ _Why:_ it's less code than a separate `InvitationRegistrationController`, and th
 
 **D-016 — Every factory user owns a regular course** · 2026-10-03
 `UserFactory` creates a non-personal course owned by the user. `User::factory()->withoutCourse()` skips this. `personalTeam()` is removed. When a user loses their current course (removed, left, deleted), they fall back to another course, or to none, in which case they land on `/courses/start`.
+
+**D-017 — AI SDK specifics** · 2026-10-04
+We use `laravel/ai` v1.0.1. Agents extend `App\Ai\Agents\StructuredAgent`, whose `provider()`/`model()` methods read `config('evalyst.ai.*')`, and whose instructions live in `resources/prompts/*.md`. `config/ai.php` sets `OPENAI_STORE=false` by default, so OpenAI doesn't keep prompts that contain student work. The model ID `gpt-5.4-mini` and its price ($0.75/$4.50 per 1M tokens) come from public pricing pages as of 2026-10. Check them against the OpenAI dashboard before going live.

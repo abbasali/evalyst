@@ -52,13 +52,13 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M04 — AI foundation & question generation → [milestones/M04-ai-question-generation.md](milestones/M04-ai-question-generation.md)
 
-- [ ] **M04.1** Install `laravel/ai`, configure OpenAI + model, `ai_runs` table, `RecordsAiRun`, `openai` rate limiter, fake-based test helpers
-- [ ] **M04.2** `QuestionGenerator` agent + prompt file + schema + output validator
-- [ ] **M04.3** `QuestionVerifier` agent + key comparison
-- [ ] **M04.4** `question_generations` table + `GenerateQuestions` job (generate → validate → verify → store drafts)
-- [ ] **M04.5** Generation form UI (prompt, counts per type, difficulty, code-output toggle, tags)
-- [ ] **M04.6** Draft review UI: polling, select/edit drafts, warnings for disputed answers, "Add selected to bank"
-- [ ] **M04.7** Generation history list + retry failed
+- [x] **M04.1** Install `laravel/ai`, configure OpenAI + model, `ai_runs` table, `RecordsAiRun`, `openai` rate limiter, fake-based test helpers — `laravel/ai` v1.0.1; `StructuredAgent` base reads provider/model from config; `OPENAI_STORE=false` so OpenAI doesn't retain prompts
+- [x] **M04.2** `QuestionGenerator` agent + prompt file + schema + output validator
+- [x] **M04.3** `QuestionVerifier` agent + key comparison
+- [x] **M04.4** `question_generations` table + `GenerateQuestions` job (generate → validate → verify → store drafts)
+- [x] **M04.5** Generation form UI (prompt, counts per type, difficulty, code-output toggle, tags) — form at `questions/generate`; limits: 3 running per course, 5 per instructor per 10 min
+- [x] **M04.6** Draft review UI: polling, select/edit drafts, warnings for disputed answers, "Add selected to bank" — a disputed draft whose key/body the instructor edited is saved without `needs_verification`
+- [x] **M04.7** Generation history list + retry failed — history lives on the generate page
 
 ## M05 — Quiz builder & access → [milestones/M05-quiz-builder.md](milestones/M05-quiz-builder.md)
 

@@ -16,8 +16,8 @@ use App\Models\Question;
 use App\Models\Tag;
 use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -36,6 +36,7 @@ class QuestionController extends Controller
             'tags.*' => ['integer'],
             'needs_verification' => ['nullable', 'boolean'],
             'trashed' => ['nullable', 'boolean'],
+            'generation' => ['nullable', 'integer'],
         ]);
 
         $questions = $currentTeam->questions()
@@ -50,6 +51,7 @@ class QuestionController extends Controller
                 'type' => $question->type->value,
                 'type_label' => $question->type->label(),
                 'excerpt' => Str::limit($question->body, 400, ''),
+                'question_generation_id' => $question->question_generation_id,
                 'default_marks' => (float) $question->default_marks,
                 'difficulty' => $question->difficulty?->value,
                 'source' => $question->source->value,
@@ -69,6 +71,7 @@ class QuestionController extends Controller
                 'tags' => array_map('intval', $filters['tags'] ?? []),
                 'needs_verification' => (bool) ($filters['needs_verification'] ?? false),
                 'trashed' => (bool) ($filters['trashed'] ?? false),
+                'generation' => isset($filters['generation']) ? (int) $filters['generation'] : null,
             ],
             'total' => $currentTeam->questions()->withTrashed()->count(),
             ...$this->formOptions($currentTeam),
@@ -145,6 +148,18 @@ class QuestionController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Question duplicated. You are editing the copy.')]);
 
         return to_route('questions.edit', [$currentTeam, $copy]);
+    }
+
+    /**
+     * Clear the "needs verification" flag after the instructor checked the answer key.
+     */
+    public function verify(Team $currentTeam, Question $question): RedirectResponse
+    {
+        $question->update(['needs_verification' => false]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Marked as verified.')]);
+
+        return back();
     }
 
     /**

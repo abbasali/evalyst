@@ -18,18 +18,24 @@ class QuestionVerifier extends StructuredAgent
     /**
      * The user message: each choice draft with options but never `is_correct`.
      *
-     * @param  array<int, array{type: string, body: string, options: list<array{body: string}>}>  $drafts  Keyed by draft index.
+     * @param  array<int, array<string, mixed>>  $drafts  Choice drafts keyed by draft index (type, body, options).
      */
     public static function buildPrompt(array $drafts): string
     {
-        return collect($drafts)->map(function (array $draft, int $index) {
-            $kind = $draft['type'] === 'multiple_choice' ? 'select ALL correct options' : 'select exactly ONE option';
-            $options = collect($draft['options'])
-                ->map(fn (array $option, int $i) => "  [{$i}] {$option['body']}")
-                ->implode("\n");
+        $blocks = [];
 
-            return "### Question index {$index} ({$kind})\n{$draft['body']}\n\nOptions:\n{$options}";
-        })->implode("\n\n---\n\n");
+        foreach ($drafts as $index => $draft) {
+            $kind = $draft['type'] === 'multiple_choice' ? 'select ALL correct options' : 'select exactly ONE option';
+            $options = [];
+
+            foreach (array_values((array) $draft['options']) as $i => $option) {
+                $options[] = "  [{$i}] {$option['body']}";
+            }
+
+            $blocks[] = "### Question index {$index} ({$kind})\n{$draft['body']}\n\nOptions:\n".implode("\n", $options);
+        }
+
+        return implode("\n\n---\n\n", $blocks);
     }
 
     public function schema(JsonSchema $schema): array

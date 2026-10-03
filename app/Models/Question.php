@@ -33,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $explanation
  * @property Difficulty|null $difficulty
  * @property QuestionSource $source
+ * @property int|null $question_generation_id
  * @property bool $needs_verification
  * @property int|null $created_by
  * @property Carbon|null $locked_at
@@ -44,7 +45,7 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable([
     'team_id', 'type', 'body', 'code_language', 'default_marks', 'scoring_policy', 'model_answer',
-    'rubric', 'explanation', 'difficulty', 'source', 'needs_verification', 'created_by',
+    'rubric', 'explanation', 'difficulty', 'source', 'question_generation_id', 'needs_verification', 'created_by',
 ])]
 class Question extends Model
 {
@@ -105,6 +106,7 @@ class Question extends Model
             ->when($filters['needs_verification'] ?? false, fn (Builder $query) => $query->where('needs_verification', true))
             ->when($filters['tags'] ?? [], fn (Builder $query, array $tags) => $query->whereHas('tags', fn (Builder $query) => $query->whereIn('tags.id', $tags)))
             ->when($filters['trashed'] ?? false, fn (Builder $query) => $query->onlyTrashed())
+            ->when($filters['generation'] ?? null, fn (Builder $query, int|string $id) => $query->where('question_generation_id', $id))
             ->when(trim((string) ($filters['q'] ?? '')), fn (Builder $query, string $term) => $query->where(
                 'body', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%',
             ));

@@ -9,12 +9,13 @@ use App\Ai\Validation\GeneratedQuestionValidator;
 use App\Ai\Validation\VerificationComparator;
 use App\Enums\AiRunPurpose;
 use App\Enums\GenerationStatus;
-use App\Models\Question;
 use App\Models\QuestionGeneration;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Str;
+use Laravel\Ai\Responses\AgentResponse;
 use Throwable;
 
 /**
@@ -112,7 +113,7 @@ class GenerateQuestions implements ShouldQueue
 
         $response = $runs->run(AiRunPurpose::QuestionGeneration, $generation, fn () => $agent->prompt($generation->prompt));
 
-        return (array) ($response['questions'] ?? []);
+        return (array) (self::structured($response)['questions'] ?? []);
     }
 
     /**
@@ -133,13 +134,13 @@ class GenerateQuestions implements ShouldQueue
             fn () => (new QuestionVerifier)->prompt(QuestionVerifier::buildPrompt($choice)),
         );
 
-        return $comparator->compare($drafts, (array) ($response['results'] ?? []));
+        return $comparator->compare($drafts, (array) (self::structured($response)['results'] ?? []));
     }
 
     /**
      * Up to 40 one-line summaries of existing questions (same tags, else newest).
      *
-     * @return list<string>
+     * @return array<int, string>
      */
     private function existingQuestionSummaries(QuestionGeneration $generation): array
     {
@@ -149,7 +150,16 @@ class GenerateQuestions implements ShouldQueue
             ->limit(40)
             ->pluck('body')
             ->map(fn (string $body) => Str::limit($this->plain($body), 100))
+            ->values()
             ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function structured(AgentResponse $response): array
+    {
+        return $response instanceof Arrayable ? $response->toArray() : [];
     }
 
     private function plain(string $markdown): string

@@ -58,3 +58,27 @@ export type QuestionFormOptions = {
 
 export const isChoiceType = (type: QuestionType): boolean =>
     type === 'single_choice' || type === 'multiple_choice';
+
+export type DraftVerification = {
+    status: 'agreed' | 'disputed' | 'not_applicable';
+    verifier_selected?: number[];
+    confidence?: number;
+    reasoning?: string;
+};
+
+export type GeneratedDraft = {
+    uid: string;
+    type: QuestionType;
+    body: string;
+    code_language: string | null;
+    default_marks: number;
+    scoring_policy: string | null;
+    model_answer: string | null;
+    rubric: string | null;
+    explanation: string | null;
+    difficulty: string | null;
+    options: QuestionOption[];
+    is_code_output: boolean;
+    verification: DraftVerification;
+    accepted: boolean;
+};
