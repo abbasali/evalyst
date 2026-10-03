@@ -36,9 +36,9 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M02 — Students roster → [milestones/M02-students.md](milestones/M02-students.md)
 
-- [ ] **M02.1** `students` migration, model, factory, policy
-- [ ] **M02.2** Students index (search, pagination) + create/edit/delete
-- [ ] **M02.3** CSV import (name, roll_number, email) with a preview, then confirm
+- [x] **M02.1** `students` migration, model, factory, policy — no `StudentPolicy`: membership middleware + scoped bindings already enforce access (404 for other courses)
+- [x] **M02.2** Students index (search, pagination) + create/edit/delete — edit/create in a dialog, `resource` routes `index/store/update/destroy`
+- [x] **M02.3** CSV import (name, roll_number, email) with a preview, then confirm
 
 ## M03 — Question bank → [milestones/M03-question-bank.md](milestones/M03-question-bank.md)
 

@@ -178,7 +178,9 @@ function submit() {
                                 </td>
                                 <td class="px-3 py-2">
                                     <Badge
-                                        :variant="statusBadge[row.status].variant"
+                                        :variant="
+                                            statusBadge[row.status].variant
+                                        "
                                     >
                                         {{ statusBadge[row.status].label }}
                                     </Badge>
@@ -198,7 +200,12 @@ function submit() {
                     @click="submit"
                 >
                     <Spinner v-if="processing" />
-                    Import {{ counts.new + counts.update }} students
+                    Import {{ counts.new + counts.update }}
+                    {{
+                        counts.new + counts.update === 1
+                            ? 'student'
+                            : 'students'
+                    }}
                 </Button>
             </DialogFooter>
         </DialogContent>

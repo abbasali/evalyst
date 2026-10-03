@@ -36,7 +36,9 @@ const emit = defineEmits<{ confirm: [] }>();
             </DialogHeader>
             <slot />
             <DialogFooter class="gap-2">
-                <Button variant="secondary" @click="open = false">Cancel</Button>
+                <Button variant="secondary" @click="open = false"
+                    >Cancel</Button
+                >
                 <Button
                     :variant="destructive ? 'destructive' : 'default'"
                     :disabled="processing"
