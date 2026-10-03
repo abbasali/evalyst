@@ -141,7 +141,7 @@ class TeamController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('You left the course ":name"', ['name' => $team->name])]);
 
-        return to_route('teams.index');
+        return $user->current_team_id ? to_route('teams.index') : to_route('courses.start');
     }
 
     /**
@@ -168,6 +168,6 @@ class TeamController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Course deleted.')]);
 
-        return to_route('teams.index');
+        return $user->current_team_id ? to_route('teams.index') : to_route('courses.start');
     }
 }

@@ -62,7 +62,8 @@ class UserFactory extends Factory
      */
     public function withoutCourse(): static
     {
-        // Drops the course-creating callback registered in configure().
+        // Drops the course-creating callback registered in configure(), so call this
+        // before chaining any other afterCreating() callbacks.
         return $this->newInstance(['afterCreating' => new Collection]);
     }
 

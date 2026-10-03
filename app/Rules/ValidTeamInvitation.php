@@ -28,6 +28,12 @@ class ValidTeamInvitation implements ValidationRule
             return;
         }
 
+        if (! $this->user->hasVerifiedEmail()) {
+            $fail(__('Verify your email address before accepting invitations.'));
+
+            return;
+        }
+
         if ($value->isAccepted()) {
             $fail(__('This invitation has already been accepted.'));
 

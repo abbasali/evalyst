@@ -181,6 +181,7 @@ const confirmCancelInvitation = (invitation: TeamInvitation) => {
                         <TooltipProvider
                             v-if="
                                 member.role !== 'owner' &&
+                                member.id !== $page.props.auth.user.id &&
                                 permissions.canRemoveMember
                             "
                         >

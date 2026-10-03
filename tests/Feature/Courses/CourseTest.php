@@ -89,3 +89,36 @@ test('audit logs are recorded against the subject course', function () {
         ->and($log->changes)->toBe(['before' => 1, 'after' => 2])
         ->and(AuditLog::forCourse($team)->count())->toBe(1);
 });
+
+test('logged-in instructors without a course are sent to onboarding from guest pages', function () {
+    $user = User::factory()->withoutCourse()->create();
+
+    $this->actingAs($user)->get(route('login'))->assertRedirect(route('courses.start'));
+});
+
+test('invitations can only be accepted with a verified email', function () {
+    $owner = User::factory()->create();
+    $invitee = User::factory()->unverified()->create(['email' => 'invitee@example.com']);
+    $invitation = $owner->currentTeam->invitations()->create([
+        'email' => 'invitee@example.com',
+        'role' => 'admin',
+        'invited_by' => $owner->id,
+        'expires_at' => now()->addDay(),
+    ]);
+
+    $this->actingAs($invitee)->post(route('invitations.accept', $invitation))
+        ->assertRedirect(route('verification.notice'));
+
+    expect($invitee->fresh()->belongsToTeam($owner->currentTeam))->toBeFalse();
+});
+
+test('removing yourself from a course behaves like leaving it', function () {
+    $owner = User::factory()->create();
+    $team = $owner->currentTeam;
+    [$colleague] = actingAsInstructor($team);
+
+    $this->delete(route('teams.members.destroy', [$team, $colleague]))
+        ->assertRedirect(route('teams.index'));
+
+    expect($colleague->fresh()->belongsToTeam($team))->toBeFalse();
+});

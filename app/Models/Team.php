@@ -32,6 +32,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['name', 'slug', 'description', 'timezone', 'is_personal'])]
 class Team extends Model
 {
+    public const DEFAULT_TIMEZONE = 'Asia/Kolkata';
+
     /** @use HasFactory<TeamFactory> */
     use GeneratesUniqueTeamSlugs, HasAuditLogs, HasFactory, SoftDeletes;
 

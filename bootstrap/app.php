@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Logged-in users hitting guest pages go to their course, or to onboarding without one.
+        $middleware->redirectUsersTo(fn (Request $request) => $request->user()?->currentTeam
+            ? route('dashboard', ['current_team' => $request->user()->currentTeam->slug])
+            : route('courses.start'));
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,

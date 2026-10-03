@@ -24,6 +24,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { start } from '@/routes/courses';
 import { dashboard } from '@/routes';
 import { index as assignmentsIndex } from '@/routes/assignments';
 import { index as questionsIndex } from '@/routes/questions';
@@ -36,7 +37,9 @@ import type { NavItem } from '@/types';
 const page = usePage();
 
 const dashboardUrl = computed(() =>
-    page.props.currentTeam ? dashboard(page.props.currentTeam.slug).url : '/',
+    page.props.currentTeam
+        ? dashboard(page.props.currentTeam.slug).url
+        : start().url,
 );
 
 const mainNavItems = computed<NavItem[]>(() => {
