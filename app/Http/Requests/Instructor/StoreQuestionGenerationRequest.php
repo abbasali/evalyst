@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Instructor;
 
+use App\Models\QuestionGeneration;
 use App\Models\Team;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -46,7 +47,10 @@ class StoreQuestionGenerationRequest extends FormRequest
                 $validator->errors()->add('type_counts', __('Ask for between 1 and :max questions in total.', ['max' => $max]));
             }
 
-            $running = $team->questionGenerations()->whereIn('status', ['pending', 'running'])->count();
+            $running = $team->questionGenerations()
+                ->whereIn('status', ['pending', 'running'])
+                ->where('updated_at', '>=', now()->subMinutes(QuestionGeneration::STALE_AFTER_MINUTES))
+                ->count();
 
             if ($running >= (int) config('evalyst.ai.max_concurrent_generations')) {
                 $validator->errors()->add('prompt', __('Please wait for running generations to finish.'));

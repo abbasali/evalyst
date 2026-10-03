@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property int $accepted_count
  * @property string|null $error
  * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read User|null $user
  * @property-read Team $team
  */
@@ -36,6 +37,17 @@ use Illuminate\Support\Carbon;
 class QuestionGeneration extends Model
 {
     use BelongsToCourse;
+
+    /**
+     * Minutes after which a pending/running generation is considered stuck (worker died).
+     */
+    public const STALE_AFTER_MINUTES = 15;
+
+    public function isStale(): bool
+    {
+        return ! $this->status->isFinished()
+            && $this->updated_at?->lt(now()->subMinutes(self::STALE_AFTER_MINUTES));
+    }
 
     public function requestedTotal(): int
     {

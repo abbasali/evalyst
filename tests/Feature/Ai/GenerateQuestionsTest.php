@@ -86,7 +86,7 @@ test('a failing generation is marked failed and the run is logged', function () 
     $job->failed(new RuntimeException('OpenAI is down'));
 
     expect($generation->fresh()->status)->toBe(GenerationStatus::Failed)
-        ->and($generation->fresh()->error)->toContain('OpenAI is down')
+        ->and($generation->fresh()->error)->not->toContain('OpenAI is down')
         ->and(AiRun::where('succeeded', false)->count())->toBe(1);
 });
 
@@ -94,5 +94,31 @@ test('AI cost uses the configured pricing per million tokens', function () {
     config(['evalyst.ai.pricing' => ['m' => ['input' => 0.75, 'output' => 4.5]]]);
 
     expect(AiCost::for('m', 2_000, 500))->toBe(0.00375)
+        ->and(AiCost::for('m-2026-08-01', 2_000, 500))->toBe(0.00375)
         ->and(AiCost::for('unknown', 2_000, 500))->toBe(0.0);
+});
+
+test('a verifier outage flags choice drafts instead of failing the generation', function () {
+    QuestionGenerator::fake([['questions' => [singleChoiceDraft()]]]);
+    QuestionVerifier::fake(fn () => throw new RuntimeException('timeout'));
+
+    $generation = generation(['single_choice' => 1]);
+    GenerateQuestions::dispatchSync($generation);
+
+    $generation->refresh();
+    expect($generation->status)->toBe(GenerationStatus::Completed)
+        ->and($generation->drafts[0]['verification']['status'])->toBe('disputed')
+        ->and($generation->warnings)->toHaveCount(1);
+});
+
+test('a retried job reuses saved drafts instead of generating again', function () {
+    QuestionGenerator::fake()->preventStrayPrompts();
+    QuestionVerifier::fake([['results' => [['index' => 0, 'selected' => [0], 'confidence' => 0.9, 'reasoning' => '']]]]);
+
+    $generation = generation(['single_choice' => 1]);
+    $generation->update(['status' => GenerationStatus::Running, 'drafts' => [singleChoiceDraft()], 'warnings' => []]);
+    GenerateQuestions::dispatchSync($generation);
+
+    QuestionGenerator::assertNeverPrompted();
+    expect($generation->fresh()->status)->toBe(GenerationStatus::Completed);
 });

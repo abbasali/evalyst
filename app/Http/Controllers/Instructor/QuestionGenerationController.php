@@ -74,6 +74,7 @@ class QuestionGenerationController extends Controller
                 'id' => $generation->id,
                 'prompt' => $generation->prompt,
                 'status' => $generation->status->value,
+                'stale' => $generation->isStale(),
                 'type_counts' => $generation->type_counts,
                 'requested' => $generation->requestedTotal(),
                 'difficulty' => $generation->difficulty,
@@ -110,7 +111,11 @@ class QuestionGenerationController extends Controller
 
     public function retry(Team $currentTeam, QuestionGeneration $questionGeneration): RedirectResponse
     {
-        abort_unless($questionGeneration->status === GenerationStatus::Failed, 422, __('Only failed generations can be retried.'));
+        abort_unless(
+            $questionGeneration->status === GenerationStatus::Failed || $questionGeneration->isStale(),
+            422,
+            __('Only failed or stuck generations can be retried.'),
+        );
 
         $questionGeneration->update(['status' => GenerationStatus::Pending, 'error' => null]);
 

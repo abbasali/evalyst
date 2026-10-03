@@ -3,6 +3,7 @@
 namespace App\Actions\Questions;
 
 use App\Enums\ChoiceScoringPolicy;
+use App\Enums\GenerationStatus;
 use App\Enums\QuestionSource;
 use App\Enums\QuestionType;
 use App\Models\QuestionGeneration;
@@ -26,9 +27,19 @@ class AcceptGeneratedQuestions
     public function handle(QuestionGeneration $generation, User $user, array $submitted): int
     {
         $team = $generation->team;
-        $this->validate($generation, $submitted);
 
-        return DB::transaction(function () use ($generation, $user, $submitted, $team) {
+        if ($generation->status !== GenerationStatus::Completed) {
+            throw ValidationException::withMessages(['drafts' => __('These drafts are not ready yet.')]);
+        }
+
+        // The draft type is fixed by the generation, never by the request.
+        $types = collect($generation->drafts ?? [])->pluck('type', 'uid');
+        $submitted = array_map(fn (array $draft) => [...$draft, 'type' => $types->get((string) ($draft['uid'] ?? ''), $draft['type'] ?? null)], $submitted);
+
+        $this->validate($generation, $submitted);
+        $tagIds = $team->tags()->whereKey($generation->tag_ids ?? [])->pluck('id')->all();
+
+        return DB::transaction(function () use ($generation, $user, $submitted, $team, $tagIds) {
             $generation = QuestionGeneration::whereKey($generation->id)->lockForUpdate()->firstOrFail();
             $drafts = collect($generation->drafts ?? [])->keyBy('uid');
 
@@ -45,7 +56,7 @@ class AcceptGeneratedQuestions
                 $this->save->handle($team, $user, [
                     ...Arr::only($draft, ['type', 'body', 'code_language', 'default_marks', 'scoring_policy', 'model_answer', 'rubric', 'explanation', 'difficulty', 'options']),
                     'needs_verification' => $disputed && ! $edited,
-                    'tag_ids' => $generation->tag_ids ?? [],
+                    'tag_ids' => $tagIds,
                 ], createAttributes: [
                     'source' => QuestionSource::Ai,
                     'question_generation_id' => $generation->id,
@@ -68,7 +79,10 @@ class AcceptGeneratedQuestions
      */
     private function validate(QuestionGeneration $generation, array $submitted): void
     {
-        $rules = ['drafts' => ['required', 'array', 'min:1', 'max:30'], 'drafts.*.uid' => ['required', 'string']];
+        $rules = [
+            'drafts' => ['required', 'array', 'min:1', 'max:'.(int) config('evalyst.ai.max_generation_questions')],
+            'drafts.*.uid' => ['required', 'string'],
+        ];
 
         foreach ($submitted as $index => $draft) {
             $type = QuestionType::tryFrom((string) ($draft['type'] ?? ''));
@@ -98,9 +112,13 @@ class AcceptGeneratedQuestions
      */
     private function keyFields(array $draft): array
     {
+        $isChoice = in_array($draft['type'] ?? null, ['single_choice', 'multiple_choice'], true);
+
         return [
             'body' => trim((string) ($draft['body'] ?? '')),
-            'options' => array_map(fn ($option) => [trim((string) $option['body']), filter_var($option['is_correct'], FILTER_VALIDATE_BOOLEAN)], (array) ($draft['options'] ?? [])),
+            'options' => $isChoice ? array_map(fn ($option) => is_array($option)
+                ? [trim((string) ($option['body'] ?? '')), filter_var($option['is_correct'] ?? false, FILTER_VALIDATE_BOOLEAN)]
+                : null, (array) ($draft['options'] ?? [])) : [],
         ];
     }
 

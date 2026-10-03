@@ -40,7 +40,7 @@ Each draft in `drafts` has the agent output fields plus `index`, `verification {
     - a checkbox (selected by default unless disputed), the type badge, difficulty, and suggested marks
     - the body rendered as Markdown, the options with the correct ones marked, the explanation, and the model answer and rubric (collapsed)
     - for disputed drafts, an amber badge: **"Answer key disputed: verifier chose B: <reasoning>"**
-    - an **Edit** button that opens the same question form inline as a drawer, using draft data. Edits are saved back into `drafts[i]`, and the verification status becomes `edited`.
+    - an **Edit** button that opens the same question form inline as a drawer, using draft data. Edits are kept client-side until accepted. On accept, the server compares the submitted body and options with the stored draft: if they changed, a disputed draft is saved without `needs_verification` (the instructor fixed it).
 - Toolbar: select all, select none, "select only agreed", and the selected count.
 - **"Add N selected to bank"** creates questions in one transaction:
     - `source = ai`, `question_generation_id` set

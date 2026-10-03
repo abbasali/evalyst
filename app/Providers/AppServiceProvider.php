@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,20 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiting();
+        $this->configureDevCommands();
+    }
+
+    /**
+     * `composer dev` must also work the `ai` queue (AI jobs never run on `default`).
+     */
+    protected function configureDevCommands(): void
+    {
+        if (! $this->app->runningInConsole() || $this->app->isProduction()) {
+            return;
+        }
+
+        DevCommands::except('queue');
+        DevCommands::artisan('queue:listen --queue=ai,default --tries=1 --timeout=0', 'queues');
     }
 
     /**

@@ -39,7 +39,7 @@ class RecordsAiRun
 
     private function record(AiRunPurpose $purpose, Model $subject, int|float $started, ?AgentResponse $response, ?Throwable $exception = null): void
     {
-        $model = $response?->meta->model ?? (string) config('evalyst.ai.model');
+        $model = ($response?->meta->model ?: null) ?? (string) config('evalyst.ai.model');
         $input = $response?->usage->inputTokens ?? 0;
         $output = $response?->usage->outputTokens ?? 0;
 
@@ -48,7 +48,7 @@ class RecordsAiRun
             'purpose' => $purpose,
             'subject_type' => $subject->getMorphClass(),
             'subject_id' => $subject->getKey(),
-            'provider' => $response?->meta->provider ?? (string) config('evalyst.ai.provider'),
+            'provider' => ($response?->meta->provider ?: null) ?? (string) config('evalyst.ai.provider'),
             'model' => $model,
             'input_tokens' => $input,
             'output_tokens' => $output,

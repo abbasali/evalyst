@@ -28,6 +28,7 @@ type Generation = {
     id: number;
     prompt: string;
     status: 'pending' | 'running' | 'completed' | 'failed';
+    stale: boolean;
     requested: number;
     difficulty: string;
     warnings: string[];
@@ -143,16 +144,14 @@ const processing = ref(false);
 const errors = ref<string[]>([]);
 
 function addSelected() {
-    const payload = drafts.value
-        .filter((d) => selected.value.includes(d.uid))
-        .map(
-            ({
-                verification: _v,
-                accepted: _a,
-                is_code_output: _c,
-                ...fields
-            }) => fields,
-        );
+    const chosen = drafts.value.filter((d) => selected.value.includes(d.uid));
+    const payload = chosen.map(
+        ({ verification: _v, accepted: _a, is_code_output: _c, ...fields }) =>
+            fields,
+    );
+    // Map "drafts.{i}.field" errors back to the card numbers shown on the page.
+    const cardNumber = (i: number) =>
+        drafts.value.findIndex((d) => d.uid === chosen[i]?.uid) + 1;
 
     router.post(
         accept.url([slug.value, props.generation.id]),
@@ -164,12 +163,36 @@ function addSelected() {
                 errors.value = [];
             },
             onFinish: () => (processing.value = false),
-            onError: (bag) => (errors.value = [...new Set(Object.values(bag))]),
+            onError: (bag) =>
+                (errors.value = [
+                    ...new Set(
+                        Object.entries(bag).map(([key, message]) => {
+                            const match = key.match(/^drafts\.(\d+)\./);
+
+                            return match
+                                ? `Draft #${cardNumber(Number(match[1]))}: ${message.replace(/drafts\.\d+\./g, '').replaceAll('_', ' ')}`
+                                : message;
+                        }),
+                    ),
+                ]),
         },
     );
 }
 
 const letter = (index: number) => String.fromCharCode(65 + index);
+
+const retrying = ref(false);
+
+function retryGeneration() {
+    router.post(
+        retry.url([slug.value, props.generation.id]),
+        {},
+        {
+            onStart: () => (retrying.value = true),
+            onFinish: () => (retrying.value = false),
+        },
+    );
+}
 </script>
 
 <template>
@@ -222,6 +245,16 @@ const letter = (index: number) => String.fromCharCode(65 + index);
                         page and come back.
                     </p>
                 </div>
+                <Button
+                    v-if="generation.stale"
+                    size="sm"
+                    variant="outline"
+                    class="ml-auto"
+                    :disabled="retrying"
+                    @click="retryGeneration"
+                >
+                    <RotateCcw /> Taking too long? Retry
+                </Button>
             </div>
             <div
                 v-for="n in 3"
@@ -244,7 +277,8 @@ const letter = (index: number) => String.fromCharCode(65 + index);
                 <Button
                     size="sm"
                     variant="outline"
-                    @click="router.post(retry.url([slug, generation.id]))"
+                    :disabled="retrying"
+                    @click="retryGeneration"
                 >
                     <RotateCcw /> Try again
                 </Button>

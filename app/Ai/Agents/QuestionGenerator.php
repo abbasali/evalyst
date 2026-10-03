@@ -3,10 +3,14 @@
 namespace App\Ai\Agents;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Ai\Attributes\Strict;
+use Laravel\Ai\Attributes\Timeout;
 
 /**
  * Generates draft questions for the bank. See docs/03-ai.md §1.
  */
+#[Strict]
+#[Timeout(150)]
 class QuestionGenerator extends StructuredAgent
 {
     /**
