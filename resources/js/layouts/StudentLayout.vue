@@ -6,7 +6,10 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 /**
  * Minimal layout for students: no sidebar, course + quiz title, and a slot for the timer.
  */
-withDefaults(defineProps<{ wide?: boolean }>(), { wide: false });
+const props = withDefaults(
+    defineProps<{ wide?: boolean; title?: string; course?: string }>(),
+    { wide: false, title: undefined, course: undefined },
+);
 
 const page = usePage();
 const context = computed(
@@ -35,11 +38,14 @@ const context = computed(
             >
                 <AppLogoIcon class="size-6 shrink-0 fill-current" />
                 <div class="min-w-0 flex-1 leading-tight">
-                    <p v-if="context" class="truncate text-sm font-semibold">
-                        {{ context.title }}
+                    <p
+                        v-if="props.title ?? context"
+                        class="truncate text-sm font-semibold"
+                    >
+                        {{ props.title ?? context?.title }}
                     </p>
                     <p class="truncate text-xs text-muted-foreground">
-                        {{ context?.course ?? 'Evalyst' }}
+                        {{ props.course ?? context?.course ?? 'Evalyst' }}
                     </p>
                 </div>
                 <slot name="header" />

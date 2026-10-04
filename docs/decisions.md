@@ -107,3 +107,11 @@ The instructor picked these from a list of options:
 - The client keeps one save queue per attempt. It never leaves a question, or submits, while an answer is unsaved. A local copy is restored only if it was edited after the server's last save. A 401/409 from a save (session gone, time up, question closed, continued in another browser) stops saving and redirects with a message.
 - A roster code must belong to a roster-mode quiz, and a shared code to a shared-mode quiz. Codes of the wrong length never match.
 - Resuming in shared-code mode uses the `attempt_{public_id}` cookie. Every attempt route checks it, not only the landing page, so a second browser that joins with the same roll number can't continue the attempt by URL.
+
+**D-023 — Live monitor and preview details** · 2026-10-04
+
+- Monitor row actions: **Allow resume on another device** (shared-code mode only: a 10-minute, single-use window), **Submit now** (force submit, `force_submitted` event) and **Reset attempt** (the instructor types the roll number to confirm). All three write audit logs on the participant.
+- Reset is allowed only while the quiz is open. After it closes, a reset would delete the submission with no way to start again. A reset student's open tab gets a 409 `reset` (or a redirect) on its next request and returns to the landing page.
+- These actions often race a student because the monitor polls, so a stale action shows an explanatory toast instead of an error page.
+- Activity events are posted in batches at most every 5 seconds, using `fetch` with `keepalive` rather than `sendBeacon`, because the request needs Laravel's CSRF header. They're limited to 30 requests a minute per attempt.
+- The preview is its own page (`student/quiz/Preview`) that reuses the student question, map and timer components with answers kept in memory. It shows no fullscreen gate. A banner says fullscreen is required for students.

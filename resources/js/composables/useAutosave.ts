@@ -165,6 +165,7 @@ function createAutosave(attemptId: string): Autosave {
                                 'This quiz is continuing in another browser.',
                             session:
                                 'Your session ended. Enter your code again.',
+                            reset: 'Your instructor reset your attempt. You can start again.',
                         }[data.reason ?? ''] ?? 'Please reload the page.',
                         data.redirect ?? null,
                     );

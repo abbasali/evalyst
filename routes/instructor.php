@@ -4,6 +4,8 @@ use App\Http\Controllers\Instructor\QuestionController;
 use App\Http\Controllers\Instructor\QuestionGenerationController;
 use App\Http\Controllers\Instructor\QuizAccessController;
 use App\Http\Controllers\Instructor\QuizController;
+use App\Http\Controllers\Instructor\QuizMonitorController;
+use App\Http\Controllers\Instructor\QuizPreviewController;
 use App\Http\Controllers\Instructor\QuizQuestionController;
 use App\Http\Controllers\Instructor\QuizStatusController;
 use App\Http\Controllers\Instructor\StudentController;
@@ -46,6 +48,12 @@ Route::prefix('quizzes/{quiz}')->name('quizzes.')->group(function () {
     Route::patch('questions/order', [QuizQuestionController::class, 'order'])->name('questions.order');
     Route::patch('questions/{assessmentQuestion}', [QuizQuestionController::class, 'update'])->name('questions.update');
     Route::delete('questions/{assessmentQuestion}', [QuizQuestionController::class, 'destroy'])->name('questions.destroy');
+
+    Route::get('monitor', [QuizMonitorController::class, 'show'])->name('monitor');
+    Route::get('preview', [QuizPreviewController::class, 'show'])->name('preview');
+    Route::post('participants/{participant}/allow-resume', [QuizMonitorController::class, 'allowResume'])->name('participants.allow-resume');
+    Route::post('participants/{participant}/reset-attempt', [QuizMonitorController::class, 'reset'])->name('participants.reset');
+    Route::post('participants/{participant}/force-submit', [QuizMonitorController::class, 'forceSubmit'])->name('participants.force-submit');
 
     Route::get('access', [QuizAccessController::class, 'show'])->name('access');
     Route::post('participants', [QuizAccessController::class, 'storeParticipants'])->name('participants.store');

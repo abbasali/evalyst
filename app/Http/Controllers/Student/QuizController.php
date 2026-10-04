@@ -85,13 +85,19 @@ class QuizController extends Controller
         }
 
         if (! EnsureStudentSession::mayContinue($request, $participant, $attempt)) {
-            if (! $attempt->resume_override_until?->isFuture()) {
+            $token = Str::random(64);
+
+            // Single use: only one browser can consume the window, even if two try at once.
+            $claimed = Attempt::query()
+                ->whereKey($attempt->id)
+                ->where('resume_override_until', '>', now())
+                ->update(['resume_token' => hash('sha256', $token), 'resume_override_until' => null]);
+
+            if ($claimed === 0) {
                 return to_route('student.landing', $assessment->public_id);
             }
 
-            $token = Str::random(64);
-            $attempt->update(['resume_token' => hash('sha256', $token), 'resume_override_until' => null]);
-            $this->issueResumeCookie($attempt, $token);
+            $this->issueResumeCookie($attempt->refresh(), $token);
         }
 
         $attempt->events()->create(['type' => AttemptEventType::Resumed, 'occurred_at' => now()]);

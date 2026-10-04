@@ -30,6 +30,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useAttemptEvents } from '@/composables/useAttemptEvents';
 import { useAutosave } from '@/composables/useAutosave';
 import StudentLayout from '@/layouts/StudentLayout.vue';
 import { cn } from '@/lib/utils';
@@ -63,6 +64,16 @@ const context = computed(
 
 const autosave = useAutosave(props.attempt.public_id);
 const status = autosave.status;
+const events = useAttemptEvents(
+    props.attempt.public_id,
+    props.attempt.track_focus,
+);
+
+function onPaste(length: number) {
+    if (props.attempt.track_focus && length > 0) {
+        events.record({ type: 'pasted', position: props.position, length });
+    }
+}
 
 /** Server clock minus this device's clock, to compare local edit times with server save times. */
 const offset = computed(
@@ -316,6 +327,7 @@ onBeforeUnmount(() => {
                         :key="question.key"
                         v-model="value"
                         :question="question"
+                        @paste="onPaste"
                     />
                 </div>
 
@@ -422,6 +434,9 @@ onBeforeUnmount(() => {
         />
 
         <Watermark :text="`${context.name} · ${context.roll_number}`" />
-        <FullscreenGate v-if="attempt.require_fullscreen" />
+        <FullscreenGate
+            v-if="attempt.require_fullscreen"
+            @exited="events.record({ type: 'fullscreen_exited' })"
+        />
     </StudentLayout>
 </template>

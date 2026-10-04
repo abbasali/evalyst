@@ -13,6 +13,9 @@ class GradeAttempt implements ShouldQueue
 {
     use Queueable;
 
+    /** An attempt reset by the instructor before grading ran is simply skipped. */
+    public bool $deleteWhenMissingModels = true;
+
     public function __construct(public Attempt $attempt) {}
 
     public function handle(): void

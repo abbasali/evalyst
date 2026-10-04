@@ -7,22 +7,27 @@ export async function sendJson(
     url: string,
     body: unknown,
 ): Promise<Response> {
+    return fetch(url, {
+        method,
+        credentials: 'same-origin',
+        headers: csrfHeaders(),
+        body: JSON.stringify(body),
+    });
+}
+
+/** JSON headers plus Laravel's XSRF cookie as the CSRF header. */
+export function csrfHeaders(): Record<string, string> {
     const xsrf = document.cookie
         .split('; ')
         .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
         ?.split('=')[1];
 
-    return fetch(url, {
-        method,
-        credentials: 'same-origin',
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}),
-        },
-        body: JSON.stringify(body),
-    });
+    return {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}),
+    };
 }
 
 /** localStorage that never throws (private mode, blocked storage). */

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Attempt;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\DevCommands;
@@ -68,6 +69,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Autosaves: generous, but stops a runaway client.
         RateLimiter::for('attempt-saves', fn (Request $request) => Limit::perMinute(120)->by($request->session()->getId() ?: $request->ip()));
+
+        // Activity events (focus, paste, fullscreen) per attempt: the client batches every 5s.
+        // Throttling runs before route binding, so the parameter is still the public ID string.
+        RateLimiter::for('attempt-events', function (Request $request) {
+            $attempt = $request->route('attempt');
+
+            return Limit::perMinute(30)->by('attempt:'.($attempt instanceof Attempt ? $attempt->public_id : (string) $attempt));
+        });
 
         RateLimiter::for('question-generation', fn (Request $request) => Limit::perMinutes(10, 5)->by($request->user()?->id ?: $request->ip()));
     }

@@ -78,11 +78,11 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 - [x] **M06.5** Autosave endpoint + server-side deadline enforcement + locking questions on first answer
 - [x] **M06.6** Timer component synced to the server deadline, warnings, client-side auto-submit
 - [x] **M06.7** Review-before-submit summary + `SubmitAttempt` + confirmation page with results link — results link 404s until M08.6
-- [ ] **M06.8** Resume rules (roster vs shared code), instructor "reset attempt"/"allow resume"
+- [x] **M06.8** Resume rules (roster vs shared code), instructor "reset attempt"/"allow resume" — plus "Submit now" (force submit); all three are audit-logged
 - [x] **M06.9** `attempts:expire` scheduled command (auto-submit)
-- [ ] **M06.10** Focus tracking → `attempt_events`
-- [ ] **M06.11** Instructor live monitor page (polling)
-- [ ] **M06.12** Instructor preview of the quiz in the student UI (no data saved)
+- [x] **M06.10** Focus tracking → `attempt_events` — also paste and fullscreen-exit events (D-021); sent with `fetch(keepalive)` instead of `sendBeacon` (needs the CSRF header)
+- [x] **M06.11** Instructor live monitor page (polling) — students in progress listed first; activity column flags 3+ focus losses/pastes/fullscreen exits
+- [x] **M06.12** Instructor preview of the quiz in the student UI (no data saved) — separate `student/quiz/Preview` page reusing the question, map and timer components
 
 ## M07 — Quiz grading → [milestones/M07-quiz-grading.md](milestones/M07-quiz-grading.md)
 
