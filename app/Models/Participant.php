@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\ParticipantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,6 +39,16 @@ class Participant extends Model
     public function uniqueIds(): array
     {
         return ['public_id'];
+    }
+
+    /**
+     * The course, through the assessment (used by RecordAudit).
+     *
+     * @return Attribute<int, never>
+     */
+    protected function teamId(): Attribute
+    {
+        return Attribute::get(fn () => $this->assessment->team_id);
     }
 
     /**

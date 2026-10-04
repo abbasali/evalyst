@@ -56,6 +56,8 @@ const form = useForm<QuizSettingsForm>(
               shuffle_options: false,
               show_answers_after_release: true,
               track_focus: true,
+              one_way_navigation: false,
+              require_fullscreen: false,
               release_mode: 'manual',
               auto_publish_threshold: '',
               access_mode: 'roster',
@@ -233,7 +235,13 @@ const releaseChoices = [
             </section>
 
             <section class="space-y-3 rounded-xl border p-5">
-                <h2 class="font-medium">During the quiz</h2>
+                <div class="space-y-1">
+                    <h2 class="font-medium">During the quiz</h2>
+                    <p class="text-xs text-muted-foreground">
+                        Every quiz also watermarks the screen with the student's
+                        name and roll number, and blocks copying question text.
+                    </p>
+                </div>
                 <label
                     v-for="toggle in [
                         {
@@ -248,8 +256,18 @@ const releaseChoices = [
                         },
                         {
                             field: 'track_focus',
-                            label: 'Track focus loss',
-                            hint: 'Records when a student leaves the quiz tab. Students are told about it.',
+                            label: 'Track focus loss and pasting',
+                            hint: 'Records when a student leaves the quiz tab or pastes into an answer. Students are told about it.',
+                        },
+                        {
+                            field: 'one_way_navigation',
+                            label: 'One-way navigation',
+                            hint: 'Students can\'t go back to earlier questions or flag them for later.',
+                        },
+                        {
+                            field: 'require_fullscreen',
+                            label: 'Require fullscreen',
+                            hint: 'The quiz is hidden until the browser is fullscreen. Leaving fullscreen is recorded. (Not available on iPhone.)',
                         },
                     ] as const"
                     :key="toggle.field"

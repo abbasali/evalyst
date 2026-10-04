@@ -22,7 +22,10 @@ class QuizRequest extends FormRequest
     /**
      * Settings that can't change once a student has started (closes_at may only move later).
      */
-    public const LOCKED_ONCE_STARTED = ['opens_at', 'duration_minutes', 'shuffle_questions', 'shuffle_options', 'track_focus', 'access_mode'];
+    public const LOCKED_ONCE_STARTED = [
+        'opens_at', 'duration_minutes', 'shuffle_questions', 'shuffle_options', 'track_focus',
+        'one_way_navigation', 'require_fullscreen', 'access_mode',
+    ];
 
     /**
      * Archived quizzes are read-only (throws with the policy's message).
@@ -61,6 +64,8 @@ class QuizRequest extends FormRequest
             'shuffle_options' => ['boolean'],
             'show_answers_after_release' => ['boolean'],
             'track_focus' => ['boolean'],
+            'one_way_navigation' => ['boolean'],
+            'require_fullscreen' => ['boolean'],
             'release_mode' => ['required', Rule::enum(ReleaseMode::class)],
             'auto_publish_threshold' => ['nullable', 'numeric', 'between:0.5,1'],
             'access_mode' => ['required', Rule::enum(AccessMode::class)],
@@ -137,6 +142,8 @@ class QuizRequest extends FormRequest
             'shuffle_options' => $this->boolean('shuffle_options'),
             'show_answers_after_release' => $this->boolean('show_answers_after_release'),
             'track_focus' => $this->boolean('track_focus'),
+            'one_way_navigation' => $this->boolean('one_way_navigation'),
+            'require_fullscreen' => $this->boolean('require_fullscreen'),
             'release_mode' => ReleaseMode::from($data['release_mode']),
             'access_mode' => AccessMode::from($data['access_mode']),
             'auto_publish_threshold' => $data['auto_publish_threshold'] !== null ? round((float) $data['auto_publish_threshold'], 2) : null,

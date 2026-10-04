@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Enums\AttemptStatus;
 use Database\Factories\AttemptFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -24,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property bool $auto_submitted
  * @property list<int> $question_order
  * @property array<int, list<int>>|null $option_order
+ * @property int $furthest_position
  * @property string $resume_token
  * @property Carbon|null $resume_override_until
  * @property string|null $score
@@ -32,10 +35,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Participant $participant
+ * @property-read Collection<int, Answer> $answers
  */
 #[Fillable([
     'participant_id', 'status', 'started_at', 'deadline_at', 'submitted_at', 'auto_submitted', 'question_order',
-    'option_order', 'resume_token', 'resume_override_until', 'score', 'max_score', 'focus_lost_count',
+    'option_order', 'furthest_position', 'resume_token', 'resume_override_until', 'score', 'max_score', 'focus_lost_count',
 ])]
 class Attempt extends Model
 {
@@ -56,6 +60,53 @@ class Attempt extends Model
     public function participant(): BelongsTo
     {
         return $this->belongsTo(Participant::class);
+    }
+
+    /**
+     * @return HasMany<Answer, $this>
+     */
+    public function answers(): HasMany
+    {
+        return $this->hasMany(Answer::class);
+    }
+
+    /**
+     * @return HasMany<AttemptEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(AttemptEvent::class);
+    }
+
+    public function isInProgress(): bool
+    {
+        return $this->status === AttemptStatus::InProgress;
+    }
+
+    /**
+     * Past the deadline plus the grace window for in-flight saves.
+     */
+    public function isOverdue(): bool
+    {
+        return now()->gt($this->deadline_at->addSeconds((int) config('evalyst.quiz.save_grace_seconds')));
+    }
+
+    /**
+     * The assessment_question ID shown at a 1-based position.
+     */
+    public function assessmentQuestionIdAt(int $position): ?int
+    {
+        return $this->question_order[$position - 1] ?? null;
+    }
+
+    public function questionCount(): int
+    {
+        return count($this->question_order);
+    }
+
+    public function cookieName(): string
+    {
+        return 'attempt_'.$this->public_id;
     }
 
     /**

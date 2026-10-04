@@ -13,6 +13,7 @@ void createInertiaApp({
         switch (true) {
             case name === 'Welcome':
             case name.endsWith('Print'):
+            case name.startsWith('student/'):
                 return null;
             case name.startsWith('auth/'):
             case name.startsWith('onboarding/'):

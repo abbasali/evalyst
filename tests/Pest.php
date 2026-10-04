@@ -1,6 +1,10 @@
 <?php
 
 use App\Enums\TeamRole;
+use App\Http\Middleware\EnsureStudentSession;
+use App\Models\Assessment;
+use App\Models\Participant;
+use App\Models\Question;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -65,4 +69,39 @@ function actingAsInstructor(?Team $team = null): array
     test()->actingAs($user);
 
     return [$user, $team];
+}
+
+/**
+ * Put a participant in the session the way JoinAssessment does.
+ */
+function studentSession(Participant $participant): void
+{
+    test()->withSession([EnsureStudentSession::SESSION_KEY => $participant->id]);
+}
+
+/**
+ * An open roster quiz with one question of each type (2 choice, 2 open) and a participant.
+ *
+ * @return array{0: Assessment, 1: Participant}
+ */
+function openQuizWithParticipant(array $attributes = []): array
+{
+    $quiz = Assessment::factory()->open()->rosterMode()->create($attributes);
+
+    foreach ([
+        Question::factory()->singleChoice(),
+        Question::factory()->multipleChoice(),
+        Question::factory()->openText(),
+        Question::factory()->openCode(),
+    ] as $index => $factory) {
+        $quiz->assessmentQuestions()->create([
+            'question_id' => $factory->for($quiz->team)->create()->id,
+            'position' => $index + 1,
+            'marks' => 2,
+        ]);
+    }
+
+    $participant = Participant::factory()->for($quiz)->withCode()->create();
+
+    return [$quiz, $participant];
 }

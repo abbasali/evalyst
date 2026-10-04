@@ -34,28 +34,28 @@ teams (Course) ─┬─< team_members >── users (Instructor)
 
 ## Enums (`app/Enums`, string-backed)
 
-| Enum                  | Cases                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `QuestionType`        | `single_choice`, `multiple_choice`, `open_text`, `open_code`                                                             |
-| `ChoiceScoringPolicy` | `all_or_nothing`, `partial`, `partial_with_penalty`                                                                      |
-| `Difficulty`          | `easy`, `medium`, `hard`                                                                                                 |
-| `QuestionSource`      | `manual`, `ai`                                                                                                           |
-| `CodeLanguage`        | `php`, `blade`, `javascript`, `typescript`, `sql`, `html`, `css`, `bash`, `json`, `plaintext`                            |
-| `GenerationStatus`    | `pending`, `running`, `completed`, `failed`                                                                              |
-| `AssessmentType`      | `quiz`, `assignment`                                                                                                     |
-| `AssessmentStatus`    | `draft`, `published`, `archived` (whether it is open/closed is worked out from dates, see below)                         |
-| `AccessMode`          | `roster`, `shared_code`                                                                                                  |
-| `ReleaseMode`         | `manual`, `automatic`                                                                                                    |
-| `AttemptStatus`       | `in_progress`, `submitted`, `grading`, `graded`                                                                          |
-| `AnswerGradingStatus` | `ungraded` (not submitted yet), `pending` (queued for AI), `needs_review`, `failed`, `final` (score settled + published) |
-| `LatePolicy`          | `not_allowed`, `allowed`, `penalty`                                                                                      |
-| `PenaltyType`         | `fixed`, `per_hour`, `per_day`                                                                                           |
-| `LateOverride`        | `allow`, `block` (nullable column = follow the assessment's policy)                                                      |
-| `SubmissionStatus`    | `submitted`, `grading`, `needs_review`, `failed`, `final` (score settled + published)                                    |
-| `RuleKind`            | `automated`, `ai`                                                                                                        |
-| `AutomatedCheck`      | `min_commits`, `min_commit_days`, `commit_message_pattern`, `path_exists`, `path_absent`, `file_contains`                |
-| `AiRunPurpose`        | `question_generation`, `question_verification`, `open_answer_grading`, `project_grading`                                 |
-| `AttemptEventType`    | `focus_lost`, `focus_returned`, `resumed`, `auto_submitted`, `force_submitted`, `resume_allowed`                         |
+| Enum                  | Cases                                                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `QuestionType`        | `single_choice`, `multiple_choice`, `open_text`, `open_code`                                                                    |
+| `ChoiceScoringPolicy` | `all_or_nothing`, `partial`, `partial_with_penalty`                                                                             |
+| `Difficulty`          | `easy`, `medium`, `hard`                                                                                                        |
+| `QuestionSource`      | `manual`, `ai`                                                                                                                  |
+| `CodeLanguage`        | `php`, `blade`, `javascript`, `typescript`, `sql`, `html`, `css`, `bash`, `json`, `plaintext`                                   |
+| `GenerationStatus`    | `pending`, `running`, `completed`, `failed`                                                                                     |
+| `AssessmentType`      | `quiz`, `assignment`                                                                                                            |
+| `AssessmentStatus`    | `draft`, `published`, `archived` (whether it is open/closed is worked out from dates, see below)                                |
+| `AccessMode`          | `roster`, `shared_code`                                                                                                         |
+| `ReleaseMode`         | `manual`, `automatic`                                                                                                           |
+| `AttemptStatus`       | `in_progress`, `submitted`, `grading`, `graded`                                                                                 |
+| `AnswerGradingStatus` | `ungraded` (not submitted yet), `pending` (queued for AI), `needs_review`, `failed`, `final` (score settled + published)        |
+| `LatePolicy`          | `not_allowed`, `allowed`, `penalty`                                                                                             |
+| `PenaltyType`         | `fixed`, `per_hour`, `per_day`                                                                                                  |
+| `LateOverride`        | `allow`, `block` (nullable column = follow the assessment's policy)                                                             |
+| `SubmissionStatus`    | `submitted`, `grading`, `needs_review`, `failed`, `final` (score settled + published)                                           |
+| `RuleKind`            | `automated`, `ai`                                                                                                               |
+| `AutomatedCheck`      | `min_commits`, `min_commit_days`, `commit_message_pattern`, `path_exists`, `path_absent`, `file_contains`                       |
+| `AiRunPurpose`        | `question_generation`, `question_verification`, `open_answer_grading`, `project_grading`                                        |
+| `AttemptEventType`    | `focus_lost`, `focus_returned`, `pasted`, `fullscreen_exited`, `resumed`, `auto_submitted`, `force_submitted`, `resume_allowed` |
 
 ## Tables
 
@@ -141,7 +141,9 @@ teams (Course) ─┬─< team_members >── users (Instructor)
 | shuffle_questions          | bool, default false             |                                                                                                                                                                                                                                                                                       |
 | shuffle_options            | bool, default false             |                                                                                                                                                                                                                                                                                       |
 | show_answers_after_release | bool, default true              | Show correct options and explanations in the results                                                                                                                                                                                                                                  |
-| track_focus                | bool, default true              |                                                                                                                                                                                                                                                                                       |
+| track_focus                | bool, default true              | Also records pasting into answers (D-021)                                                                                                                                                                                                                                             |
+| one_way_navigation         | bool, default false             | Students can't go back to earlier questions (D-021)                                                                                                                                                                                                                                   |
+| require_fullscreen         | bool, default false             | The quiz is hidden until the browser is fullscreen; exits are recorded (D-021)                                                                                                                                                                                                        |
 | **Assignment-only**        |                                 |                                                                                                                                                                                                                                                                                       |
 | late_policy                | `LatePolicy`, nullable          |                                                                                                                                                                                                                                                                                       |
 | penalty_type               | `PenaltyType`, nullable         |                                                                                                                                                                                                                                                                                       |
@@ -186,39 +188,40 @@ Once any submission for the assessment has been graded, rules **cannot be delete
 
 The override columns (`deadline_override_at` … `override_note`) are added in **M09.1**. M05.1 creates the rest.
 
-| Column               | Type                         | Notes                                                                      |
-| -------------------- | ---------------------------- | -------------------------------------------------------------------------- |
-| assessment_id        | FK, cascade                  |                                                                            |
-| student_id           | FK, cascade                  |                                                                            |
-| public_id            | ulid, unique                 | Results link token                                                         |
+| Column               | Type                         | Notes                                                                                   |
+| -------------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
+| assessment_id        | FK, cascade                  |                                                                                         |
+| student_id           | FK, cascade                  |                                                                                         |
+| public_id            | ulid, unique                 | Results link token                                                                      |
 | access_code          | string(12), nullable, unique | Roster mode only. Alphabet `ACDEFHJKMNPRTWXY3479` (no look-alikes, D-020), 8 characters |
-| deadline_override_at | datetime, nullable           | Assignment: this student's effective deadline                              |
-| late_override        | `LateOverride`, nullable     |                                                                            |
-| penalty_waived       | bool, default false          |                                                                            |
-| penalty_override     | decimal(8,2), nullable       | A fixed penalty that replaces the calculated one                           |
-| override_note        | text, nullable               |                                                                            |
-| joined_at            | datetime, nullable           |                                                                            |
+| deadline_override_at | datetime, nullable           | Assignment: this student's effective deadline                                           |
+| late_override        | `LateOverride`, nullable     |                                                                                         |
+| penalty_waived       | bool, default false          |                                                                                         |
+| penalty_override     | decimal(8,2), nullable       | A fixed penalty that replaces the calculated one                                        |
+| override_note        | text, nullable               |                                                                                         |
+| joined_at            | datetime, nullable           |                                                                                         |
 
 Unique: (`assessment_id`, `student_id`).
 
 ### `attempts`
 
-| Column                | Type                       | Notes                                                                                                                                           |
-| --------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| participant_id        | FK, cascade, **unique**    | One attempt per participant. An instructor "reset" deletes it.                                                                                  |
-| public_id             | ulid, unique               |                                                                                                                                                 |
-| status                | `AttemptStatus`            |                                                                                                                                                 |
-| started_at            | datetime                   |                                                                                                                                                 |
-| deadline_at           | datetime                   | `min(started_at + duration, closes_at)`                                                                                                         |
-| submitted_at          | datetime, nullable         |                                                                                                                                                 |
-| auto_submitted        | bool, default false        |                                                                                                                                                 |
-| question_order        | json                       | Array of `assessment_question_id`s, fixed at start                                                                                              |
-| option_order          | json, nullable             | `{assessment_question_id: [option_id,…]}`                                                                                                       |
-| resume_token          | string(64)                 | Hashed. Stored in a cookie when the attempt starts.                                                                                             |
-| resume_override_until | datetime, nullable         | Set by the instructor's "allow resume" (M06.8). The first resume inside this window, from any browser, issues a new token and clears the field. |
-| score                 | decimal(8,2), nullable     | Sum of answer scores                                                                                                                            |
-| max_score             | decimal(8,2)               | Snapshot at start                                                                                                                               |
-| focus_lost_count      | unsignedInteger, default 0 |                                                                                                                                                 |
+| Column                | Type                            | Notes                                                                                                                                           |
+| --------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| participant_id        | FK, cascade, **unique**         | One attempt per participant. An instructor "reset" deletes it.                                                                                  |
+| public_id             | ulid, unique                    |                                                                                                                                                 |
+| status                | `AttemptStatus`                 |                                                                                                                                                 |
+| started_at            | datetime                        |                                                                                                                                                 |
+| deadline_at           | datetime                        | `min(started_at + duration, closes_at)`                                                                                                         |
+| submitted_at          | datetime, nullable              |                                                                                                                                                 |
+| auto_submitted        | bool, default false             |                                                                                                                                                 |
+| question_order        | json                            | Array of `assessment_question_id`s, fixed at start                                                                                              |
+| option_order          | json, nullable                  | `{assessment_question_id: [option_id,…]}`                                                                                                       |
+| furthest_position     | unsignedSmallInteger, default 1 | Highest question position reached; enforces one-way navigation (D-021)                                                                          |
+| resume_token          | string(64)                      | Hashed. Stored in a cookie when the attempt starts.                                                                                             |
+| resume_override_until | datetime, nullable              | Set by the instructor's "allow resume" (M06.8). The first resume inside this window, from any browser, issues a new token and clears the field. |
+| score                 | decimal(8,2), nullable          | Sum of answer scores                                                                                                                            |
+| max_score             | decimal(8,2)                    | Snapshot at start                                                                                                                               |
+| focus_lost_count      | unsignedInteger, default 0      |                                                                                                                                                 |
 
 ### `answers`
 

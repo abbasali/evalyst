@@ -5,6 +5,7 @@ import {
     ArchiveRestore,
     CheckCircle2,
     CircleX,
+    Eye,
     Lock,
     MoreHorizontal,
     Rocket,
@@ -39,6 +40,8 @@ import {
     archive,
     destroy,
     edit,
+    monitor,
+    preview,
     publish,
     unarchive,
     unpublish,
@@ -49,7 +52,7 @@ import type { PublishCheck, QuizSummary } from '@/types';
 const props = defineProps<{
     quiz: QuizSummary;
     checklist: PublishCheck[];
-    tab: 'settings' | 'questions' | 'access';
+    tab: 'settings' | 'questions' | 'access' | 'monitor';
 }>();
 
 const { slug } = useCourse();
@@ -69,6 +72,7 @@ const tabs = computed(() => [
         href: access(args.value),
         count: props.quiz.participants_count,
     },
+    { key: 'monitor', label: 'Monitor', href: monitor(args.value) },
 ]);
 
 const readyCount = computed(
@@ -140,6 +144,9 @@ function remove() {
             </div>
 
             <div class="flex shrink-0 items-center gap-2">
+                <Button v-if="quiz.questions_count" variant="outline" as-child>
+                    <Link :href="preview(args)"><Eye /> Preview</Link>
+                </Button>
                 <Button v-if="quiz.can.publish" @click="publishOpen = true">
                     <Rocket /> Publish
                     <span
@@ -210,10 +217,11 @@ function remove() {
             <Lock class="size-4" />
             <AlertTitle>Students have started</AlertTitle>
             <AlertDescription>
-                Questions, marks, duration, shuffle, focus tracking and access
-                mode are locked so every student is scored the same way. You can
-                still edit the title and instructions, extend the closing time,
-                change how results are released, and add students.
+                Questions, marks, duration, and the access, shuffle and
+                anti-cheating settings are locked so every student is scored the
+                same way. You can still edit the title and instructions, extend
+                the closing time, change how results are released, and add
+                students.
             </AlertDescription>
         </Alert>
 
@@ -245,7 +253,7 @@ function remove() {
                 </span>
             </Link>
             <span
-                v-for="later in ['Monitor', 'Results']"
+                v-for="later in ['Results']"
                 :key="later"
                 class="flex cursor-default items-center gap-1.5 border-b-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground/60"
                 title="Coming soon"
