@@ -43,6 +43,7 @@ import {
     monitor,
     preview,
     publish,
+    results,
     unarchive,
     unpublish,
 } from '@/routes/quizzes';
@@ -52,7 +53,13 @@ import type { PublishCheck, QuizSummary } from '@/types';
 const props = defineProps<{
     quiz: QuizSummary;
     checklist: PublishCheck[];
-    tab: 'settings' | 'questions' | 'access' | 'monitor';
+    tab:
+        | 'settings'
+        | 'questions'
+        | 'access'
+        | 'monitor'
+        | 'results'
+        | 'analytics';
 }>();
 
 const { slug } = useCourse();
@@ -73,6 +80,7 @@ const tabs = computed(() => [
         count: props.quiz.participants_count,
     },
     { key: 'monitor', label: 'Monitor', href: monitor(args.value) },
+    { key: 'results', label: 'Results', href: results(args.value) },
 ]);
 
 const readyCount = computed(
@@ -252,15 +260,6 @@ function remove() {
                     {{ item.count }}
                 </span>
             </Link>
-            <span
-                v-for="later in ['Results']"
-                :key="later"
-                class="flex cursor-default items-center gap-1.5 border-b-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground/60"
-                title="Coming soon"
-            >
-                {{ later }}
-                <span class="rounded-full border px-1.5 text-[10px]">soon</span>
-            </span>
         </nav>
 
         <slot />

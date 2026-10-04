@@ -78,6 +78,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by('attempt:'.($attempt instanceof Attempt ? $attempt->public_id : (string) $attempt));
         });
 
+        // Per results link (and a generous per-IP ceiling), so a class behind one NAT isn't blocked.
+        RateLimiter::for('results', fn (Request $request) => [
+            Limit::perMinute(30)->by('results:'.$request->route('participant')),
+            Limit::perMinute(600)->by('results-ip:'.$request->ip()),
+        ]);
+
         RateLimiter::for('question-generation', fn (Request $request) => Limit::perMinutes(10, 5)->by($request->user()?->id ?: $request->ip()));
     }
 

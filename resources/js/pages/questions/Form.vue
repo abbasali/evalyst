@@ -7,8 +7,10 @@ import {
     ListChecks,
     Lock,
     TextCursorInput,
+    RotateCcw,
 } from '@lucide/vue';
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import InputError from '@/components/InputError.vue';
 import MarkdownEditor from '@/components/markdown/MarkdownEditor.vue';
 import OptionsEditor from '@/components/questions/OptionsEditor.vue';
@@ -22,7 +24,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { useCourse } from '@/composables/useCourse';
 import { cn } from '@/lib/utils';
-import { duplicate, index, store, update } from '@/routes/questions';
+import { duplicate, index, regrade, store, update } from '@/routes/questions';
 import type {
     Question,
     QuestionFormOptions,
@@ -34,6 +36,7 @@ import type {
 const props = defineProps<
     QuestionFormOptions & {
         question: Question | null;
+        gradedAnswersCount?: number;
     }
 >();
 
@@ -51,6 +54,23 @@ defineOptions({
 
 const { slug } = useCourse();
 const locked = computed(() => props.question?.locked ?? false);
+const regradeOpen = ref(false);
+const regrading = ref(false);
+
+function regradeAnswers() {
+    router.post(
+        regrade.url([slug.value, props.question!.id]),
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (regrading.value = true),
+            onFinish: () => {
+                regrading.value = false;
+                regradeOpen.value = false;
+            },
+        },
+    );
+}
 
 const blankOptions = (): QuestionOption[] =>
     Array.from({ length: 4 }, () => ({ body: '', is_correct: false }));
@@ -199,6 +219,16 @@ const tagError = computed(
                     @click="router.post(duplicate.url([slug, question!.id]))"
                 >
                     <Copy /> Duplicate to edit wording
+                </Button>
+                <Button
+                    v-if="gradedAnswersCount"
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    @click="regradeOpen = true"
+                >
+                    <RotateCcw /> Regrade {{ gradedAnswersCount }}
+                    {{ gradedAnswersCount === 1 ? 'answer' : 'answers' }}
                 </Button>
             </AlertDescription>
         </Alert>
@@ -444,5 +474,13 @@ const tagError = computed(
                 Save question
             </Button>
         </div>
+        <ConfirmDialog
+            v-model:open="regradeOpen"
+            title="Regrade answers to this question?"
+            description="Save your rubric or model answer changes first. Every graded answer is graded again with the current version (answers you graded by hand are kept); students may see scores change, and current grades stay visible until the new ones are settled."
+            confirm-label="Regrade"
+            :processing="regrading"
+            @confirm="regradeAnswers"
+        />
     </form>
 </template>

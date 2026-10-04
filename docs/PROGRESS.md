@@ -95,12 +95,12 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M08 — Review & results → [milestones/M08-review-and-results.md](milestones/M08-review-and-results.md)
 
-- [ ] **M08.1** Review inbox (course-wide): filters, counts in the sidebar badge
-- [ ] **M08.2** Review detail: answer vs model answer/rubric, AI score/feedback/confidence/flags; accept / edit & publish
-- [ ] **M08.3** Bulk publish, retry failed, regrade (one answer / whole question after a rubric change)
-- [ ] **M08.4** Audit trail UI per item (history panel in the review detail and participant page) + logging coverage check
-- [ ] **M08.5** Quiz results page (per participant), attempt detail view
-- [ ] **M08.6** Release results (manual/automatic) + student results page via `/results/{public_id}`
+- [x] **M08.1** Review inbox (course-wide): filters, counts in the sidebar badge
+- [x] **M08.2** Review detail: answer vs model answer/rubric, AI score/feedback/confidence/flags; accept / edit & publish
+- [x] **M08.3** Bulk publish, retry failed, regrade (one answer / whole question after a rubric change)
+- [x] **M08.4** Audit trail UI per item (history panel in the review detail and participant page) + logging coverage check
+- [x] **M08.5** Quiz results page (per participant), attempt detail view
+- [x] **M08.6** Release results (manual/automatic) + student results page via `/results/{public_id}` — automatic release is an accessor; students never see model answers (D-025)
 
 ## M09 — Assignments: setup & submission → [milestones/M09-assignments.md](milestones/M09-assignments.md)
 

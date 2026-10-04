@@ -67,7 +67,12 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: FolderGit2,
         },
         { title: 'Students', href: studentsIndex(course).url, icon: Users },
-        { title: 'Review', href: reviewIndex(course).url, icon: Inbox },
+        {
+            title: 'Review',
+            href: reviewIndex(course).url,
+            icon: Inbox,
+            badge: page.props.reviewCount,
+        },
     ];
 });
 

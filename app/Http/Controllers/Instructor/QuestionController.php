@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Instructor;
 
+use App\Actions\Grading\RegradeAnswers;
 use App\Actions\Questions\DuplicateQuestion;
 use App\Actions\Questions\SaveQuestion;
+use App\Enums\AnswerGradingStatus;
 use App\Enums\AssessmentStatus;
 use App\Enums\ChoiceScoringPolicy;
 use App\Enums\CodeLanguage;
@@ -13,9 +15,11 @@ use App\Enums\QuestionType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Instructor\QuestionRequest;
 use App\Http\Resources\QuestionResource;
+use App\Models\Answer;
 use App\Models\Question;
 use App\Models\Tag;
 use App\Models\Team;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -110,8 +114,29 @@ class QuestionController extends Controller
     {
         return Inertia::render('questions/Form', [
             'question' => (new QuestionResource($question->load(['options', 'tags'])))->resolve(),
+            'gradedAnswersCount' => $question->isLocked() ? $this->gradedAnswers($question)->count() : 0,
             ...$this->formOptions($currentTeam),
         ]);
+    }
+
+    /**
+     * Regrade every graded answer to this question, e.g. after improving its rubric (D-009).
+     */
+    public function regrade(Team $currentTeam, Question $question, Request $request, RegradeAnswers $regrade): RedirectResponse
+    {
+        $count = $regrade->handle($request->user(), $this->gradedAnswers($question)->with('attempt')->lazyById(), keepInstructorGrades: true);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice('{0} Nothing to regrade.|{1} Regrading 1 answer.|[2,*] Regrading :count answers.', $count, ['count' => $count])]);
+
+        return back();
+    }
+
+    /**
+     * @return HasMany<Answer, Question>
+     */
+    private function gradedAnswers(Question $question): HasMany
+    {
+        return $question->answers()->whereNotIn('grading_status', [AnswerGradingStatus::Ungraded]);
     }
 
     public function update(QuestionRequest $request, Team $currentTeam, Question $question, SaveQuestion $save): RedirectResponse

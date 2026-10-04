@@ -4,6 +4,7 @@ use App\Http\Controllers\Student\AttemptController;
 use App\Http\Controllers\Student\AttemptEventController;
 use App\Http\Controllers\Student\JoinController;
 use App\Http\Controllers\Student\QuizController;
+use App\Http\Controllers\Student\ResultsController;
 use App\Http\Middleware\EnsureStudentSession;
 use App\Models\Participant;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::name('student.')->group(function () {
     Route::get('join', [JoinController::class, 'create'])->name('join');
     Route::post('join', [JoinController::class, 'store'])->middleware('throttle:join')->name('join.store');
+    Route::get('results/{participant:public_id}', [ResultsController::class, 'show'])->middleware('throttle:results')->name('results');
 
     Route::middleware(EnsureStudentSession::class)->group(function () {
         Route::get('a/{assessment:public_id}', [QuizController::class, 'show'])->name('landing');

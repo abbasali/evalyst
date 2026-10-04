@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Instructor\AttemptController;
 use App\Http\Controllers\Instructor\QuestionController;
 use App\Http\Controllers\Instructor\QuestionGenerationController;
 use App\Http\Controllers\Instructor\QuizAccessController;
@@ -7,7 +8,9 @@ use App\Http\Controllers\Instructor\QuizController;
 use App\Http\Controllers\Instructor\QuizMonitorController;
 use App\Http\Controllers\Instructor\QuizPreviewController;
 use App\Http\Controllers\Instructor\QuizQuestionController;
+use App\Http\Controllers\Instructor\QuizResultsController;
 use App\Http\Controllers\Instructor\QuizStatusController;
+use App\Http\Controllers\Instructor\ReviewController;
 use App\Http\Controllers\Instructor\StudentController;
 use App\Http\Controllers\Instructor\StudentImportController;
 use App\Http\Controllers\Instructor\TagController;
@@ -55,6 +58,11 @@ Route::prefix('quizzes/{quiz}')->name('quizzes.')->group(function () {
     Route::post('participants/{participant}/reset-attempt', [QuizMonitorController::class, 'reset'])->name('participants.reset');
     Route::post('participants/{participant}/force-submit', [QuizMonitorController::class, 'forceSubmit'])->name('participants.force-submit');
 
+    Route::get('results', [QuizResultsController::class, 'show'])->name('results');
+    Route::post('results/release', [QuizResultsController::class, 'release'])->name('results.release');
+    Route::post('results/unrelease', [QuizResultsController::class, 'unrelease'])->name('results.unrelease');
+    Route::post('questions/{assessmentQuestion}/regrade', [ReviewController::class, 'regradeQuestion'])->name('questions.regrade');
+
     Route::get('access', [QuizAccessController::class, 'show'])->name('access');
     Route::post('participants', [QuizAccessController::class, 'storeParticipants'])->name('participants.store');
     Route::post('participants/{participant}/regenerate-code', [QuizAccessController::class, 'regenerateCode'])->name('participants.regenerate-code');
@@ -71,4 +79,11 @@ Route::prefix('quizzes/{quiz}')->name('quizzes.')->group(function () {
 Route::resource('quizzes', QuizController::class)->except('show');
 
 Route::inertia('assignments', 'ComingSoon', ['section' => 'Assignments'])->name('assignments.index');
-Route::inertia('review', 'ComingSoon', ['section' => 'Review'])->name('review.index');
+Route::get('review', [ReviewController::class, 'index'])->name('review.index');
+Route::post('review/bulk-accept', [ReviewController::class, 'bulkAccept'])->name('review.bulk-accept');
+Route::get('review/answers/{answer}', [ReviewController::class, 'show'])->name('review.answers.show');
+Route::post('review/answers/{answer}/accept', [ReviewController::class, 'accept'])->name('review.answers.accept');
+Route::put('review/answers/{answer}', [ReviewController::class, 'update'])->name('review.answers.update');
+Route::post('review/answers/{answer}/regrade', [ReviewController::class, 'regrade'])->name('review.answers.regrade');
+Route::get('attempts/{attempt}', [AttemptController::class, 'show'])->name('attempts.show');
+Route::post('questions/{question}/regrade', [QuestionController::class, 'regrade'])->name('questions.regrade');

@@ -93,6 +93,14 @@ class Question extends Model
     /**
      * Used in a published (not draft or archived) assessment; such questions can't be deleted.
      */
+    /**
+     * @return HasMany<Answer, $this>
+     */
+    public function answers(): HasMany
+    {
+        return $this->hasMany(Answer::class);
+    }
+
     public function isInPublishedAssessment(): bool
     {
         return $this->assessmentQuestions()
