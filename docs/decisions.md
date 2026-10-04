@@ -83,3 +83,8 @@ _Why:_ M05.6 must lock a quiz "once any attempt exists", and its restriction tes
 - Switching access mode is blocked once any participant exists (stricter than "has started"), because roster codes and shared-code joins can't be mixed. Switching back to roster clears the shared code.
 - A bank question that is soft-deleted while in a draft quiz blocks publishing ("Remove questions deleted from the bank").
 - The quiz edit screen is one Inertia page per tab (`quizzes/Settings`, `quizzes/Questions`, `quizzes/Access`) sharing `components/quizzes/QuizShell.vue`, so each tab has its own URL. Monitor and Results show "soon" until M06/M08.
+
+**D-020 — Access codes avoid every look-alike character** · 2026-10-04
+The code alphabet is `ACDEFHJKMNPRTWXY3479` (20 characters). Both sides of each confusable pair are left out: `0/O/Q`, `1/I/L`, `2/Z`, `5/S`, `6/G`, `8/B`, `U/V`. Codes stay 8 characters (roster, ~2.6×10¹⁰ combinations) and 6 (shared, ~6.4×10⁷), which is plenty with unique checks and join rate limiting.
+_Why:_ codes are read off printed cards and projectors and typed by students in a hurry. Leaving out only one side of a pair (e.g. dropping `O` but keeping `Q`) still causes wrong entries.
+

@@ -6,12 +6,18 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Join codes students type in. No 0/O, 1/I/L to avoid misreads.
+ * Join codes students type in or read off a projector. Both sides of every look-alike pair
+ * are left out (0/O/Q, 1/I/L, 2/Z, 5/S, 6/G, 8/B, U/V), so no character can be misread.
  * Roster codes are 8 characters and shared codes 6, so `/join` can tell them apart.
  */
 class AccessCode
 {
-    public const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    public const ALPHABET = 'ACDEFHJKMNPRTWXY3479';
+
+    /**
+     * Characters that are never used because they look like another character.
+     */
+    public const AMBIGUOUS = '0OQ1IL2Z5S6G8BUV';
 
     public const ROSTER_LENGTH = 8;
 

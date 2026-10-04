@@ -4,6 +4,7 @@ use App\Models\Assessment;
 use App\Models\Attempt;
 use App\Models\Participant;
 use App\Models\Student;
+use App\Support\AccessCode;
 
 it('adds roster students with unique 8-character codes', function () {
     [, $team] = actingAsInstructor();
@@ -21,7 +22,7 @@ it('adds roster students with unique 8-character codes', function () {
     $codes = $quiz->participants()->pluck('access_code');
     expect($codes)->toHaveCount(3)
         ->and($codes->unique())->toHaveCount(3)
-        ->and($codes->every(fn ($code) => preg_match('/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/', $code)))->toBeTrue();
+        ->and($codes->every(fn ($code) => preg_match('/^['.AccessCode::ALPHABET.']{8}$/', $code)))->toBeTrue();
 });
 
 it('regenerates a code and blocks removing a student who started', function () {
@@ -74,7 +75,7 @@ it('rotates the shared code', function () {
 
     $this->post(route('quizzes.shared-code.rotate', [$team, $quiz]))->assertRedirect();
 
-    expect($quiz->fresh()->shared_code)->not->toBe($old)->toMatch('/^[A-Z2-9]{6}$/');
+    expect($quiz->fresh()->shared_code)->not->toBe($old)->toMatch('/^['.AccessCode::ALPHABET.']{6}$/');
     $this->post(route('quizzes.participants.store', [$team, $quiz]), ['student_ids' => [Student::factory()->for($team)->create()->id]])
         ->assertStatus(422);
 });
