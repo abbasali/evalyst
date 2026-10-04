@@ -8,7 +8,7 @@ use RuntimeException;
 /**
  * Join codes students type in or read off a projector. Both sides of every look-alike pair
  * are left out (0/O/Q, 1/I/L, 2/Z, 5/S, 6/G, 8/B, U/V), so no character can be misread.
- * Roster codes are 8 characters and shared codes 6, so `/join` can tell them apart.
+ * Roster and shared codes are both 6 characters and unique across both tables (D-030).
  */
 class AccessCode
 {
@@ -19,9 +19,11 @@ class AccessCode
      */
     public const AMBIGUOUS = '0OQ1IL2Z5S6G8BUV';
 
-    public const ROSTER_LENGTH = 8;
+    public const LENGTH = 6;
 
-    public const SHARED_LENGTH = 6;
+    public const ROSTER_LENGTH = self::LENGTH;
+
+    public const SHARED_LENGTH = self::LENGTH;
 
     /**
      * A code not yet used by any participant or assessment.

@@ -6,7 +6,7 @@ use App\Models\Participant;
 use App\Models\Student;
 use App\Support\AccessCode;
 
-it('adds roster students with unique 8-character codes', function () {
+it('adds roster students with unique 6-character codes', function () {
     [, $team] = actingAsInstructor();
     $quiz = Assessment::factory()->for($team)->rosterMode()->create();
     $students = Student::factory()->for($team)->count(3)->create();
@@ -22,7 +22,7 @@ it('adds roster students with unique 8-character codes', function () {
     $codes = $quiz->participants()->pluck('access_code');
     expect($codes)->toHaveCount(3)
         ->and($codes->unique())->toHaveCount(3)
-        ->and($codes->every(fn ($code) => preg_match('/^['.AccessCode::ALPHABET.']{8}$/', $code)))->toBeTrue();
+        ->and($codes->every(fn ($code) => preg_match('/^['.AccessCode::ALPHABET.']{6}$/', $code)))->toBeTrue();
 });
 
 it('regenerates a code and blocks removing a student who started', function () {
@@ -34,7 +34,7 @@ it('regenerates a code and blocks removing a student who started', function () {
     $oldCode = $waiting->access_code;
 
     $this->post(route('quizzes.participants.regenerate-code', [$team, $quiz, $waiting]))->assertRedirect();
-    expect($waiting->fresh()->access_code)->not->toBe($oldCode)->toHaveLength(8)
+    expect($waiting->fresh()->access_code)->not->toBe($oldCode)->toHaveLength(6)
         ->and(Participant::where('access_code', $oldCode)->exists())->toBeFalse();
 
     $this->delete(route('quizzes.participants.destroy', [$team, $quiz, $started]))->assertForbidden();

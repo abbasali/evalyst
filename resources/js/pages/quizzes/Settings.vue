@@ -99,7 +99,7 @@ const accessChoices = [
         value: 'roster' as const,
         icon: Users,
         title: 'Roster codes',
-        hint: 'Pick students from your roster. Each gets a personal 8-character code.',
+        hint: 'Pick students from your roster. Each gets a personal 6-character code.',
     },
     {
         value: 'shared_code' as const,
