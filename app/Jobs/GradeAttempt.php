@@ -2,12 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Actions\Grading\GradeAttempt as GradeAttemptAction;
 use App\Models\Attempt;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
 /**
- * Grades a submitted attempt. A no-op until M07.2 adds choice scoring and AI grading.
+ * Grades a submitted attempt (choice scoring now, open answers queued for AI).
  */
 class GradeAttempt implements ShouldQueue
 {
@@ -18,8 +19,8 @@ class GradeAttempt implements ShouldQueue
 
     public function __construct(public Attempt $attempt) {}
 
-    public function handle(): void
+    public function handle(GradeAttemptAction $grade): void
     {
-        //
+        $grade->handle($this->attempt);
     }
 }

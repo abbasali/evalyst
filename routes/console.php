@@ -11,3 +11,5 @@ Schedule::call(function () {
 })->daily()->description('Delete expired team invitations');
 
 Schedule::command('attempts:expire')->everyMinute()->withoutOverlapping();
+
+Schedule::command('grading:recover')->everyTenMinutes()->withoutOverlapping()->onOneServer();

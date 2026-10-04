@@ -86,12 +86,12 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M07 — Quiz grading → [milestones/M07-quiz-grading.md](milestones/M07-quiz-grading.md)
 
-- [ ] **M07.1** `ChoiceScorer` (all 3 policies) with table-driven tests
-- [ ] **M07.2** `GradeAttempt` orchestration on submit: score choices, blank → 0, dispatch AI jobs, aggregate attempt status
-- [ ] **M07.3** `OpenAnswerGrader` agent + prompt (text and code) + injection hardening
-- [ ] **M07.4** `GradeOpenAnswer` job (rate limit, retries, failure state, ai_run logging)
-- [ ] **M07.5** `PublishGate` + auto-publish wiring
-- [ ] **M07.6** `grading:recover` scheduled command
+- [x] **M07.1** `ChoiceScorer` (all 3 policies) with table-driven tests
+- [x] **M07.2** `GradeAttempt` orchestration on submit: score choices, blank → 0, dispatch AI jobs, aggregate attempt status
+- [x] **M07.3** `OpenAnswerGrader` agent + prompt (text and code) + injection hardening
+- [x] **M07.4** `GradeOpenAnswer` job (rate limit, retries, failure state, ai_run logging) — retry/checkpoint details in D-024
+- [x] **M07.5** `PublishGate` + auto-publish wiring
+- [x] **M07.6** `grading:recover` scheduled command
 
 ## M08 — Review & results → [milestones/M08-review-and-results.md](milestones/M08-review-and-results.md)
 

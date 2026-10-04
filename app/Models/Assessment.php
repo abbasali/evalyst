@@ -6,6 +6,7 @@ use App\Concerns\BelongsToCourse;
 use App\Enums\AccessMode;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
+use App\Enums\AttemptStatus;
 use App\Enums\ReleaseMode;
 use Database\Factories\AssessmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -170,6 +171,23 @@ class Assessment extends Model
     public function hasAttempts(): bool
     {
         return $this->attempts()->exists();
+    }
+
+    /**
+     * Students see published grades once results are released: by hand (manual mode), or
+     * automatically once the assessment has closed and nobody is still mid-attempt.
+     */
+    public function resultsReleased(): bool
+    {
+        if ($this->results_released_at !== null) {
+            return true;
+        }
+
+        if ($this->release_mode !== ReleaseMode::Automatic || $this->isDraft() || now()->lt($this->closes_at)) {
+            return false;
+        }
+
+        return ! $this->attempts()->where('attempts.status', AttemptStatus::InProgress)->exists();
     }
 
     public function maxScore(): float

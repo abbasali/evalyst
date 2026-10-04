@@ -174,6 +174,23 @@ class Team extends Model
     }
 
     /**
+     * Answers and attempts sit several levels below the course, so scoped `{answer}` /
+     * `{attempt}` bindings are resolved through their assessment's course.
+     *
+     * @param  string  $childType
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveChildRouteBinding($childType, $value, $field): ?Model
+    {
+        return match ($childType) {
+            'answer' => Answer::query()->forCourse($this)->where('answers.'.($field ?? 'id'), $value)->first(),
+            'attempt' => Attempt::query()->forCourse($this)->where('attempts.'.($field ?? 'id'), $value)->first(),
+            default => parent::resolveChildRouteBinding($childType, $value, $field),
+        };
+    }
+
+    /**
      * Get the route key for the model.
      */
     public function getRouteKeyName(): string

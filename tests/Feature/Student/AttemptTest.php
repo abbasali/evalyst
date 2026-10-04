@@ -124,7 +124,7 @@ it('accepts saves within the grace window and auto-submits after it', function (
         ->assertJson(['redirect' => route('student.done', $attempt->public_id)]);
 
     expect($answer->fresh()->text_answer)->toBe('Just in time')
-        ->and($attempt->fresh()->status)->toBe(AttemptStatus::Submitted)
+        ->and($attempt->fresh()->status)->not->toBe(AttemptStatus::InProgress)
         ->and($attempt->fresh()->auto_submitted)->toBeTrue();
 });
 
