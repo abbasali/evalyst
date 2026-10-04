@@ -228,10 +228,14 @@ class Assessment extends Model
      */
     public function resultsReleased(): bool
     {
-        if ($this->results_released_at !== null) {
-            return true;
-        }
+        return $this->results_released_at !== null || $this->autoReleaseDue();
+    }
 
+    /**
+     * Automatic mode: closed, nobody still mid-attempt, and (assignments) every personal deadline passed.
+     */
+    public function autoReleaseDue(): bool
+    {
         if ($this->release_mode !== ReleaseMode::Automatic || $this->isDraft() || now()->lt($this->closes_at)) {
             return false;
         }

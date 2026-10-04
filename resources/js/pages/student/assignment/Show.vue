@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import {
+    BarChart3,
     CalendarClock,
     CheckCircle2,
     GitCommitHorizontal,
@@ -226,6 +227,15 @@ function lateLabel(minutes: number): string {
                             label="Copy results link"
                         />
                     </div>
+                    <Button
+                        v-if="current"
+                        as-child
+                        variant="outline"
+                        size="sm"
+                        class="mt-1"
+                    >
+                        <a :href="resultsUrl"><BarChart3 /> View my results</a>
+                    </Button>
                 </div>
             </section>
 

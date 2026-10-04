@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, usePoll } from '@inertiajs/vue3';
+import { watch } from 'vue';
 import { Clock, Hourglass } from '@lucide/vue';
 import StudentAnswer from '@/components/grading/StudentAnswer.vue';
 import Markdown from '@/components/markdown/Markdown.vue';
@@ -25,7 +26,7 @@ type Item = {
     feedback: string | null;
 };
 
-defineProps<{
+const props = defineProps<{
     assessment: { title: string; timezone: string };
     student: { name: string; roll_number: string };
     submittedAt: string | null;
@@ -35,6 +36,19 @@ defineProps<{
     total: number | null;
     maxScore: number | null;
 }>();
+
+// Check for new grades every 30 seconds (Inertia slows this down in background tabs) until
+// everything is released and published, for up to 30 minutes.
+const { start, stop } = usePoll(30_000, {}, { autoStart: false });
+const startedAt = Date.now();
+watch(
+    () =>
+        props.started &&
+        (!props.released || props.total === null) &&
+        Date.now() - startedAt < 30 * 60_000,
+    (waiting) => (waiting ? start() : stop()),
+    { immediate: true },
+);
 </script>
 
 <template>

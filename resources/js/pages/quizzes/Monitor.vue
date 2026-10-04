@@ -37,6 +37,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useCourse } from '@/composables/useCourse';
 import { formatInCourseTz } from '@/lib/datetime';
+import { marks } from '@/lib/grading';
 import { cn } from '@/lib/utils';
 import { index } from '@/routes/quizzes';
 import { allowResume, forceSubmit, reset } from '@/routes/quizzes/participants';
@@ -52,6 +53,9 @@ type Row = {
     submitted_at: string | null;
     auto_submitted: boolean;
     answered: number;
+    score: number | null;
+    max_score: number | null;
+    score_state: 'live' | 'grading' | 'final' | null;
     total: number | null;
     flagged: number;
     focus_lost: number;
@@ -250,6 +254,7 @@ const flagged = (count: number) => count >= props.alertAt;
                         <th class="px-4 py-3 font-medium">Status</th>
                         <th class="px-4 py-3 font-medium">Progress</th>
                         <th class="px-4 py-3 font-medium">Time left</th>
+                        <th class="px-4 py-3 text-right font-medium">Score</th>
                         <th class="px-4 py-3 font-medium">Activity</th>
                         <th class="w-12 px-4 py-3">
                             <span class="sr-only">Actions</span>
@@ -310,6 +315,34 @@ const flagged = (count: number) => count >= props.alertAt;
                                     ? timeLeft(row)
                                     : '—'
                             }}
+                        </td>
+                        <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                            <template v-if="row.score !== null">
+                                <span class="font-medium tabular-nums">
+                                    {{ marks(row.score) }}
+                                </span>
+                                <span
+                                    class="text-muted-foreground tabular-nums"
+                                >
+                                    / {{ marks(row.max_score) }}
+                                </span>
+                                <span
+                                    v-if="row.score_state !== 'final'"
+                                    class="block text-xs text-muted-foreground"
+                                    :title="
+                                        row.score_state === 'live'
+                                            ? 'Choice answers so far. Written answers are graded after submitting.'
+                                            : 'Some written answers are still being graded or reviewed.'
+                                    "
+                                >
+                                    {{
+                                        row.score_state === 'live'
+                                            ? 'choices so far'
+                                            : 'grading…'
+                                    }}
+                                </span>
+                            </template>
+                            <span v-else class="text-muted-foreground">—</span>
                         </td>
                         <td class="px-4 py-2.5">
                             <div

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { CheckCircle2 } from '@lucide/vue';
+import { BarChart3, CheckCircle2 } from '@lucide/vue';
 import { onMounted } from 'vue';
 import CopyButton from '@/components/CopyButton.vue';
+import { Button } from '@/components/ui/button';
 import StudentLayout from '@/layouts/StudentLayout.vue';
 import { formatInCourseTz } from '@/lib/datetime';
 
@@ -58,9 +59,12 @@ onMounted(() => {
                     </span>
                     <CopyButton :value="resultsUrl" label="Copy results link" />
                 </div>
+                <Button as-child class="w-full">
+                    <a :href="resultsUrl"><BarChart3 /> View my results</a>
+                </Button>
                 <p class="text-xs text-muted-foreground">
-                    Save this link. You'll use it to see your results once your
-                    instructor releases them.
+                    Save this link. Your results appear there once your
+                    instructor releases them; the page updates by itself.
                 </p>
             </div>
         </div>

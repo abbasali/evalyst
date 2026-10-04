@@ -3,6 +3,7 @@ import { Check, Copy } from '@lucide/vue';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
+import { copyText } from '@/lib/clipboard';
 
 const props = withDefaults(
     defineProps<{ value: string; label?: string; size?: 'icon' | 'sm' }>(),
@@ -12,11 +13,11 @@ const props = withDefaults(
 const copied = ref(false);
 
 async function copy() {
-    try {
-        await navigator.clipboard.writeText(props.value);
+    if (await copyText(props.value)) {
         copied.value = true;
+        toast.success('Copied to the clipboard.');
         setTimeout(() => (copied.value = false), 1500);
-    } catch {
+    } else {
         toast.error('Could not copy. Select the text and copy it manually.');
     }
 }

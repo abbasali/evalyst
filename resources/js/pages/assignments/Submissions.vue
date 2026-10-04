@@ -73,6 +73,7 @@ const props = defineProps<
             mode: 'manual' | 'automatic';
             released: boolean;
             released_at: string | null;
+            can_unrelease: boolean;
         };
         lateOverrides: Option[];
     }
@@ -225,15 +226,21 @@ function toggleRelease() {
                 </p>
                 <Button
                     v-if="
-                        release.mode === 'manual' &&
-                        assignment.state !== 'draft'
+                        assignment.state !== 'draft' &&
+                        (!release.released || release.can_unrelease)
                     "
                     :variant="release.released ? 'outline' : 'default'"
                     :disabled="processing"
                     @click="confirmOpen = true"
                 >
                     <component :is="release.released ? EyeOff : Send" />
-                    {{ release.released ? 'Hide results' : 'Release results' }}
+                    {{
+                        release.released
+                            ? 'Hide results'
+                            : release.mode === 'automatic'
+                              ? 'Release now'
+                              : 'Release results'
+                    }}
                 </Button>
             </div>
 

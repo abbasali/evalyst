@@ -169,3 +169,12 @@ The instructor picked these from a list of options:
 - The gradebook leaves an assessment's column blank until its results are released. It loads students in chunks with their participants eager-loaded. Column headers carry the type, so two assessments with the same title can be told apart.
 - The dashboard's course comes from the URL, and "this month" (dashboard and AI usage) starts at midnight on the 1st in the course timezone. Releasing from the dashboard asks for confirmation first.
 - Duplicating skips questions that have since been deleted from the bank.
+
+**D-029 — Feedback fixes** · 2026-10-05
+
+- Copy buttons fall back to `execCommand('copy')` on plain-http sites (such as `evalyst.test`), where browsers don't provide `navigator.clipboard`.
+- Toasts are coloured by type through `components/AppToaster.vue`. Student pages now have a toaster too; they had none before.
+- The live monitor shows a score column. While a student is working it adds up their choice answers, scored on the fly. After they submit it is the sum of the grades settled so far, marked "grading…" until every answer is final.
+- Open answers are still graded when **each student submits**, not when the quiz closes. Submissions are spread out, except when everyone is auto-submitted at the deadline. In that case the `openai` limiter (60/min, `EVALYST_AI_RATE_LIMIT`) works through the backlog in a few minutes.
+- Instructors can release results early in automatic mode. Releasing isn't allowed while students can still take the quiz if correct answers would be shown. Results can be hidden again until automatic release is due.
+- Student results pages check for new grades every 30 seconds (slower in background tabs) for up to 30 minutes, until everything is released and published.

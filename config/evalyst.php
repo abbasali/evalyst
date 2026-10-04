@@ -25,7 +25,7 @@ return [
         'auto_publish_threshold' => 0.80,
         'max_generation_questions' => 30,
         'max_concurrent_generations' => 3,
-        'rate_limit_per_minute' => 60,
+        'rate_limit_per_minute' => (int) env('EVALYST_AI_RATE_LIMIT', 60),
     ],
 
     /*

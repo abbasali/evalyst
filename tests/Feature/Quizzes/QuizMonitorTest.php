@@ -178,3 +178,28 @@ it('sends a student whose attempt was reset back to the start', function () {
         ->assertStatus(409)->assertJson(['reason' => 'reset', 'redirect' => route('student.landing', $quiz->public_id)]);
     $this->get(route('student.question', [$attempt->public_id, 1]))->assertRedirect(route('student.landing', $quiz->public_id));
 });
+
+it('shows a live score from choice answers while the student is working', function () {
+    [$team, $quiz] = monitoredQuiz();
+    [$attempt] = app(StartAttempt::class)->handle(Participant::factory()->for($quiz)->withCode()->create());
+    $answer = $attempt->answers()->first();
+    $answer->update(['selected_option_ids' => [$answer->question->options()->where('is_correct', true)->value('id')]]);
+
+    $this->get(route('quizzes.monitor', [$team, $quiz]))
+        ->assertInertia(fn ($page) => $page
+            ->where('rows.0.score', 1)
+            ->where('rows.0.max_score', 1)
+            ->where('rows.0.score_state', 'live'));
+});
+
+it('counts only settled grades for a submitted attempt that is still grading', function () {
+    [$team, $quiz] = monitoredQuiz();
+    $quiz->assessmentQuestions()->create(['question_id' => Question::factory()->openText()->for($team)->create()->id, 'position' => 2, 'marks' => 2]);
+    [$attempt] = app(StartAttempt::class)->handle(Participant::factory()->for($quiz)->withCode()->create());
+    $attempt->update(['status' => 'grading', 'submitted_at' => now()]);
+    $attempt->answers()->orderBy('id')->first()->update(['grading_status' => 'final', 'score' => 1]);
+    $attempt->answers()->orderByDesc('id')->first()->update(['grading_status' => 'pending']);
+
+    $this->get(route('quizzes.monitor', [$team, $quiz]))
+        ->assertInertia(fn ($page) => $page->where('rows.0.score', 1)->where('rows.0.score_state', 'grading'));
+});

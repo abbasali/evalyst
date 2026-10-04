@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, usePoll } from '@inertiajs/vue3';
+import { watch } from 'vue';
 import { Clock, GitCommitHorizontal, Hourglass } from '@lucide/vue';
 import StudentLayout from '@/layouts/StudentLayout.vue';
 import { formatInCourseTz } from '@/lib/datetime';
 import { marks } from '@/lib/grading';
 
-defineProps<{
+const props = defineProps<{
     assessment: { title: string; timezone: string };
     student: { name: string; roll_number: string };
     submission: {
@@ -38,6 +39,19 @@ function late(minutes: number): string {
           ? `${Math.ceil(minutes / 60)} hours late`
           : `${Math.ceil(minutes / 1440)} days late`;
 }
+
+// Check for new grades every 30 seconds (Inertia slows this down in background tabs) until
+// everything is released and published, for up to 30 minutes.
+const { start, stop } = usePoll(30_000, {}, { autoStart: false });
+const startedAt = Date.now();
+watch(
+    () =>
+        !!props.submission &&
+        !props.published &&
+        Date.now() - startedAt < 30 * 60_000,
+    (waiting) => (waiting ? start() : stop()),
+    { immediate: true },
+);
 </script>
 
 <template>
