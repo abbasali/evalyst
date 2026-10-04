@@ -15,7 +15,7 @@ class AssessmentPolicy
     public function update(User $user, Assessment $assessment): Response
     {
         return $assessment->isArchived()
-            ? Response::deny(__('Archived quizzes are read-only. Unarchive it first.'))
+            ? Response::deny(__('Archived :nouns are read-only. Unarchive it first.', ['noun' => $assessment->noun()]))
             : Response::allow();
     }
 
@@ -46,30 +46,30 @@ class AssessmentPolicy
     public function unpublish(User $user, Assessment $assessment): Response
     {
         if (! $assessment->isPublished()) {
-            return Response::deny(__('Only a published quiz can be unpublished.'));
+            return Response::deny(__('Only a published :noun can be unpublished.', ['noun' => $assessment->noun()]));
         }
 
         return $assessment->hasAttempts()
-            ? Response::deny(__('Students have started, so it can\'t go back to draft.'))
+            ? Response::deny(__('Students have started or submitted, so it can\'t go back to draft.'))
             : Response::allow();
     }
 
     public function archive(User $user, Assessment $assessment): Response
     {
         if (! $assessment->isPublished()) {
-            return Response::deny(__('Only a published quiz can be archived.'));
+            return Response::deny(__('Only a published :noun can be archived.', ['noun' => $assessment->noun()]));
         }
 
         return $assessment->isClosed() || ! $assessment->hasAttempts()
             ? Response::allow()
-            : Response::deny(__('Students are taking this quiz. Archive it after it closes.'));
+            : Response::deny(__('Students are still working on this :noun. Archive it after it closes.', ['noun' => $assessment->noun()]));
     }
 
     public function unarchive(User $user, Assessment $assessment): Response
     {
         return $assessment->isArchived()
             ? Response::allow()
-            : Response::deny(__('This quiz isn\'t archived.'));
+            : Response::deny(__('This :noun isn\'t archived.', ['noun' => $assessment->noun()]));
     }
 
     public function delete(User $user, Assessment $assessment): Response

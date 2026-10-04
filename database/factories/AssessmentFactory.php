@@ -5,6 +5,8 @@ namespace Database\Factories;
 use App\Enums\AccessMode;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
+use App\Enums\LatePolicy;
+use App\Enums\PenaltyType;
 use App\Enums\ReleaseMode;
 use App\Models\Assessment;
 use App\Models\Team;
@@ -43,7 +45,22 @@ class AssessmentFactory extends Factory
 
     public function assignment(): static
     {
-        return $this->state(['type' => AssessmentType::Assignment, 'duration_minutes' => null]);
+        return $this->state([
+            'type' => AssessmentType::Assignment,
+            'duration_minutes' => null,
+            'instructions' => 'Build a small Laravel blog with posts CRUD and tests.',
+            'late_policy' => LatePolicy::NotAllowed,
+        ]);
+    }
+
+    public function withLatePenalty(PenaltyType $type = PenaltyType::PerDay, float $value = 1, ?float $cap = null): static
+    {
+        return $this->state([
+            'late_policy' => LatePolicy::Penalty,
+            'penalty_type' => $type,
+            'penalty_value' => $value,
+            'penalty_cap' => $cap,
+        ]);
     }
 
     public function draft(): static

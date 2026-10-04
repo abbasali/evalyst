@@ -74,7 +74,7 @@ class JoinAssessment
      */
     public static function invalid(): ValidationException
     {
-        return ValidationException::withMessages(['code' => __('That code doesn\'t match any quiz. Check it and try again.')]);
+        return ValidationException::withMessages(['code' => __('That code doesn\'t match any quiz or assignment. Check it and try again.')]);
     }
 
     private function ensureJoinable(Assessment $assessment, ?Participant $participant = null): void
@@ -84,12 +84,14 @@ class JoinAssessment
         }
 
         $message = match (true) {
-            $assessment->isArchived() => __('This quiz is no longer available.'),
-            $assessment->isUpcoming() => __('This quiz opens on :time.', [
+            $assessment->isArchived() => __('This :noun is no longer available.', ['noun' => $assessment->noun()]),
+            $assessment->isUpcoming() => __('This :noun opens on :time.', [
+                'noun' => $assessment->noun(),
                 'time' => $assessment->opens_at?->setTimezone($assessment->team->timezone)->format('j M Y \a\t g:i A'),
             ]),
             // A student who already started can still come back to see their submission.
-            $assessment->isClosed() && ! $participant?->attempt()->exists() => __('This quiz has closed.'),
+            // Assignments stay reachable: late submissions, overrides and history are explained on the page.
+            $assessment->isQuiz() && $assessment->isClosed() && ! $participant?->attempt()->exists() => __('This quiz has closed.'),
             default => null,
         };
 

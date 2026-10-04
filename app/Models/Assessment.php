@@ -7,6 +7,8 @@ use App\Enums\AccessMode;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\AttemptStatus;
+use App\Enums\LatePolicy;
+use App\Enums\PenaltyType;
 use App\Enums\ReleaseMode;
 use Database\Factories\AssessmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -46,6 +48,16 @@ use Illuminate\Support\Carbon;
  * @property bool $track_focus
  * @property bool $one_way_navigation
  * @property bool $require_fullscreen
+ * @property LatePolicy|null $late_policy
+ * @property PenaltyType|null $penalty_type
+ * @property string|null $penalty_value
+ * @property string|null $penalty_cap
+ * @property int $grace_minutes
+ * @property Carbon|null $hard_cutoff_at
+ * @property bool $allow_resubmission
+ * @property bool $show_rules_to_students
+ * @property list<string>|null $extra_ignored_paths
+ * @property-read Collection<int, AssignmentRule> $rules
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -61,6 +73,8 @@ use Illuminate\Support\Carbon;
     'team_id', 'type', 'title', 'instructions', 'status', 'access_mode', 'shared_code', 'opens_at', 'closes_at',
     'release_mode', 'results_released_at', 'auto_publish_threshold', 'created_by', 'duration_minutes',
     'shuffle_questions', 'shuffle_options', 'show_answers_after_release', 'track_focus', 'one_way_navigation', 'require_fullscreen',
+    'late_policy', 'penalty_type', 'penalty_value', 'penalty_cap', 'grace_minutes', 'hard_cutoff_at', 'allow_resubmission',
+    'show_rules_to_students', 'extra_ignored_paths',
 ])]
 class Assessment extends Model
 {
@@ -109,6 +123,37 @@ class Assessment extends Model
     public function attempts(): HasManyThrough
     {
         return $this->hasManyThrough(Attempt::class, Participant::class);
+    }
+
+    /**
+     * Assignment rules, in order.
+     *
+     * @return HasMany<AssignmentRule, $this>
+     */
+    public function rules(): HasMany
+    {
+        return $this->hasMany(AssignmentRule::class)->orderBy('position');
+    }
+
+    /**
+     * @return HasManyThrough<Submission, Participant, $this>
+     */
+    public function submissions(): HasManyThrough
+    {
+        return $this->hasManyThrough(Submission::class, Participant::class);
+    }
+
+    public function isAssignment(): bool
+    {
+        return $this->type === AssessmentType::Assignment;
+    }
+
+    /**
+     * "quiz" or "assignment", for messages.
+     */
+    public function noun(): string
+    {
+        return $this->isAssignment() ? __('assignment') : __('quiz');
     }
 
     public function isQuiz(): bool
@@ -170,6 +215,10 @@ class Assessment extends Model
      */
     public function hasAttempts(): bool
     {
+        if ($this->isAssignment()) {
+            return $this->submissions()->exists();
+        }
+
         return $this->attempts()->exists();
     }
 
@@ -192,6 +241,10 @@ class Assessment extends Model
 
     public function maxScore(): float
     {
+        if ($this->isAssignment()) {
+            return (float) $this->rules()->sum('marks');
+        }
+
         return (float) $this->assessmentQuestions()->sum('marks');
     }
 
@@ -253,6 +306,15 @@ class Assessment extends Model
             'track_focus' => 'boolean',
             'one_way_navigation' => 'boolean',
             'require_fullscreen' => 'boolean',
+            'late_policy' => LatePolicy::class,
+            'penalty_type' => PenaltyType::class,
+            'penalty_value' => 'decimal:2',
+            'penalty_cap' => 'decimal:2',
+            'grace_minutes' => 'integer',
+            'hard_cutoff_at' => 'datetime',
+            'allow_resubmission' => 'boolean',
+            'show_rules_to_students' => 'boolean',
+            'extra_ignored_paths' => 'array',
         ];
     }
 }

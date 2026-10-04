@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Instructor\AssignmentAccessController;
+use App\Http\Controllers\Instructor\AssignmentController;
+use App\Http\Controllers\Instructor\AssignmentRuleController;
+use App\Http\Controllers\Instructor\AssignmentSubmissionController;
 use App\Http\Controllers\Instructor\AttemptController;
 use App\Http\Controllers\Instructor\QuestionController;
 use App\Http\Controllers\Instructor\QuestionGenerationController;
@@ -78,7 +82,31 @@ Route::prefix('quizzes/{quiz}')->name('quizzes.')->group(function () {
 });
 Route::resource('quizzes', QuizController::class)->except('show');
 
-Route::inertia('assignments', 'ComingSoon', ['section' => 'Assignments'])->name('assignments.index');
+// `{assignment}` is bound explicitly (AppServiceProvider), so the quiz controllers for access,
+// status and release serve assignments too.
+Route::prefix('assignments/{assignment}')->name('assignments.')->group(function () {
+    Route::get('rules', [AssignmentRuleController::class, 'index'])->name('rules');
+    Route::put('rules', [AssignmentRuleController::class, 'update'])->name('rules.update');
+
+    Route::get('access', [AssignmentAccessController::class, 'show'])->name('access');
+    Route::post('participants', [QuizAccessController::class, 'storeParticipants'])->name('participants.store');
+    Route::post('participants/{participant}/regenerate-code', [QuizAccessController::class, 'regenerateCode'])->name('participants.regenerate-code');
+    Route::delete('participants/{participant}', [QuizAccessController::class, 'destroyParticipant'])->name('participants.destroy');
+    Route::post('shared-code/rotate', [QuizAccessController::class, 'rotateSharedCode'])->name('shared-code.rotate');
+    Route::get('codes/print', [QuizAccessController::class, 'printCodes'])->name('codes.print');
+    Route::get('codes.csv', [QuizAccessController::class, 'downloadCodes'])->name('codes.csv');
+
+    Route::get('submissions', [AssignmentSubmissionController::class, 'index'])->name('submissions');
+    Route::put('participants/{participant}/overrides', [AssignmentSubmissionController::class, 'overrides'])->name('participants.overrides');
+    Route::post('results/release', [QuizResultsController::class, 'release'])->name('results.release');
+    Route::post('results/unrelease', [QuizResultsController::class, 'unrelease'])->name('results.unrelease');
+
+    Route::post('publish', [QuizStatusController::class, 'publish'])->name('publish');
+    Route::post('unpublish', [QuizStatusController::class, 'unpublish'])->name('unpublish');
+    Route::post('archive', [QuizStatusController::class, 'archive'])->name('archive');
+    Route::post('unarchive', [QuizStatusController::class, 'unarchive'])->name('unarchive');
+});
+Route::resource('assignments', AssignmentController::class)->except('show');
 Route::get('review', [ReviewController::class, 'index'])->name('review.index');
 Route::post('review/bulk-accept', [ReviewController::class, 'bulkAccept'])->name('review.bulk-accept');
 Route::get('review/answers/{answer}', [ReviewController::class, 'show'])->name('review.answers.show');

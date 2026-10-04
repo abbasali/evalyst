@@ -277,6 +277,7 @@ Unique: (`assessment_id`, `student_id`).
 | published_at          | datetime, nullable         |                                                                                          |
 | error                 | text, nullable             |                                                                                          |
 | review_reasons        | json, nullable             | Same meaning as on `answers`                                                             |
+| ai_flags              | json, nullable             | Flags from `ProjectGrader` (e.g. `prompt_injection`), shown in review (D-026)            |
 
 `minutes_late` and `penalty` are worked out when the student submits, and **recalculated** whenever the participant's overrides change (M09.7). Each submission is evaluated on its own: a late resubmission's penalty replaces the earlier one and is not added to it, because only the current submission counts.
 

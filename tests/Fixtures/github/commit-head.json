@@ -1,0 +1,8 @@
+{
+    "sha": "4f2c1a9e8b7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b",
+    "commit": {
+        "author": { "name": "Student", "date": "2026-10-05T10:00:00Z" },
+        "message": "feat: add posts CRUD\n\nLonger body"
+    },
+    "parents": [{ "sha": "aaa" }]
+}

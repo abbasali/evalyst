@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Student\AssignmentController;
 use App\Http\Controllers\Student\AttemptController;
 use App\Http\Controllers\Student\AttemptEventController;
 use App\Http\Controllers\Student\JoinController;
@@ -29,6 +30,7 @@ Route::name('student.')->group(function () {
         Route::get('a/{assessment:public_id}', [QuizController::class, 'show'])->name('landing');
         Route::post('a/{assessment:public_id}/start', [QuizController::class, 'start'])->name('start');
         Route::post('a/{assessment:public_id}/resume', [QuizController::class, 'resume'])->name('resume');
+        Route::post('a/{assessment:public_id}/submit-repo', [AssignmentController::class, 'submit'])->middleware('throttle:repo-submissions')->name('assignment.submit');
 
         // A reset deletes the attempt: send the student back to the landing page to start again.
         $attemptMissing = function (Request $request) {
