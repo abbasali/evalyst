@@ -4,6 +4,7 @@ use App\Enums\AccessMode;
 use App\Models\Assessment;
 use App\Models\Attempt;
 use App\Models\Participant;
+use App\Support\AccessCode;
 
 function quizPayload(array $overrides = []): array
 {
@@ -70,7 +71,7 @@ it('generates a shared code when shared-code mode is chosen', function () {
 
     $this->put(route('quizzes.update', [$team, $quiz]), quizPayload(['access_mode' => 'shared_code']))->assertSessionHasNoErrors();
 
-    expect($quiz->fresh()->shared_code)->toMatch('/^[A-Z2-9]{6}$/');
+    expect($quiz->fresh()->shared_code)->toMatch('/^['.AccessCode::ALPHABET.']{6}$/');
 });
 
 it('blocks switching access mode once participants exist', function () {

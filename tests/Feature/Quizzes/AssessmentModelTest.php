@@ -34,10 +34,14 @@ it('derives upcoming/open/closed from status and dates', function (AssessmentSta
 })->with('time states');
 
 it('generates codes from the unambiguous alphabet', function () {
-    foreach (range(1, 50) as $ignored) {
-        expect(AccessCode::generate(AccessCode::ROSTER_LENGTH))->toMatch('/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/')
-            ->and(AccessCode::generate(AccessCode::SHARED_LENGTH))->toMatch('/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/');
-    }
+    expect(array_intersect(str_split(AccessCode::ALPHABET), str_split(AccessCode::AMBIGUOUS)))->toBeEmpty();
+
+    $codes = collect(range(1, 200))->flatMap(fn () => [
+        AccessCode::generate(AccessCode::ROSTER_LENGTH),
+        AccessCode::generate(AccessCode::SHARED_LENGTH),
+    ]);
+
+    expect($codes->every(fn (string $code) => preg_match('/^['.AccessCode::ALPHABET.']{6}(['.AccessCode::ALPHABET.']{2})?$/', $code)))->toBeTrue();
 });
 
 it('totals marks for the max score', function () {

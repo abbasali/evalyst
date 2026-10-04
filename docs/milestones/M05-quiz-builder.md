@@ -23,7 +23,7 @@
         - scopes: `quizzes()`, `assignments()`
     - `AssessmentQuestion` (a model rather than a bare pivot, because answers reference it)
     - `Participant`: `student()`, `assessment()`, `attempt()` (HasOne, added in M06)
-- `App\Support\AccessCode::generate(int $length)` uses the alphabet `ABCDEFGHJKMNPQRSTUVWXYZ23456789` and `random_int`, and retries until the code is unique. Roster codes are 8 characters, shared codes 6.
+- `App\Support\AccessCode::generate(int $length)` uses the alphabet `ACDEFHJKMNPRTWXY3479` (no look-alikes, D-020) and `random_int`, and retries until the code is unique. Roster codes are 8 characters, shared codes 6.
 - Add `Student::participants()`. Turn on the delete guards that were stubbed earlier: a student who has participants can't be deleted (M02.2), and neither can a question attached to a published assessment (M03.7).
 - `AssessmentFactory` states: `quiz()`, `published()`, `open()`, `closed()`, `rosterMode()`, `sharedCode()`.
 

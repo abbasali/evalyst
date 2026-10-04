@@ -191,7 +191,7 @@ The override columns (`deadline_override_at` … `override_note`) are added in *
 | assessment_id        | FK, cascade                  |                                                                            |
 | student_id           | FK, cascade                  |                                                                            |
 | public_id            | ulid, unique                 | Results link token                                                         |
-| access_code          | string(12), nullable, unique | Roster mode only. Alphabet `ABCDEFGHJKMNPQRSTUVWXYZ23456789`, 8 characters |
+| access_code          | string(12), nullable, unique | Roster mode only. Alphabet `ACDEFHJKMNPRTWXY3479` (no look-alikes, D-020), 8 characters |
 | deadline_override_at | datetime, nullable           | Assignment: this student's effective deadline                              |
 | late_override        | `LateOverride`, nullable     |                                                                            |
 | penalty_waived       | bool, default false          |                                                                            |
