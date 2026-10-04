@@ -4,6 +4,7 @@ import {
     Archive,
     ArchiveRestore,
     CheckCircle2,
+    Copy,
     CircleX,
     MoreHorizontal,
     Rocket,
@@ -44,6 +45,7 @@ import {
     unarchive,
     unpublish,
 } from '@/routes/assignments';
+import { duplicate } from '@/routes/assessments';
 import type { AssignmentSummary, PublishCheck } from '@/types';
 
 const props = defineProps<{
@@ -156,13 +158,7 @@ function remove() {
                 >
                     <ArchiveRestore /> Unarchive
                 </Button>
-                <DropdownMenu
-                    v-if="
-                        quiz.can.unpublish ||
-                        quiz.can.archive ||
-                        quiz.can.delete
-                    "
-                >
+                <DropdownMenu>
                     <DropdownMenuTrigger as-child>
                         <Button
                             variant="outline"
@@ -173,6 +169,9 @@ function remove() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        <DropdownMenuItem @click="post(duplicate.url(args))">
+                            <Copy /> Duplicate
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                             v-if="quiz.can.unpublish"
                             @click="post(unpublish.url(args))"

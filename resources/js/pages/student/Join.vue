@@ -58,7 +58,7 @@ function back() {
 </script>
 
 <template>
-    <Head title="Join a quiz" />
+    <Head title="Join" />
 
     <StudentLayout>
         <div class="mx-auto mt-6 max-w-sm space-y-6 sm:mt-14">
@@ -69,7 +69,9 @@ function back() {
                     <KeyRound class="size-5 text-primary" />
                 </div>
                 <h1 class="text-xl font-semibold tracking-tight">
-                    {{ step === 'code' ? 'Join a quiz' : shared!.title }}
+                    {{
+                        step === 'code' ? 'Join with your code' : shared!.title
+                    }}
                 </h1>
                 <p class="text-sm text-muted-foreground">
                     {{

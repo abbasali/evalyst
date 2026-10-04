@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import {
+    Download,
     MoreHorizontal,
     Pencil,
     Search,
@@ -26,6 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { useCourse } from '@/composables/useCourse';
+import { gradebook } from '@/routes';
 import { destroy, index } from '@/routes/students';
 import type { Paginated, Student, Team } from '@/types';
 
@@ -101,6 +103,9 @@ function remove() {
             description="Your course roster. Students join assessments with access codes — no accounts needed."
         >
             <template #actions>
+                <Button v-if="total > 0" variant="outline" as-child>
+                    <a :href="gradebook.url(slug)"><Download /> Gradebook</a>
+                </Button>
                 <Button variant="outline" @click="importOpen = true">
                     <Upload /> Import CSV
                 </Button>

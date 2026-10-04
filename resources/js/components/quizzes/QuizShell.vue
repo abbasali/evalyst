@@ -4,6 +4,7 @@ import {
     Archive,
     ArchiveRestore,
     CheckCircle2,
+    Copy,
     CircleX,
     Eye,
     Lock,
@@ -37,6 +38,7 @@ import { formatInCourseTz } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import {
     access,
+    analytics,
     archive,
     destroy,
     edit,
@@ -48,6 +50,7 @@ import {
     unpublish,
 } from '@/routes/quizzes';
 import { index as questionsIndex } from '@/routes/quizzes/questions';
+import { duplicate } from '@/routes/assessments';
 import type { PublishCheck, QuizSummary } from '@/types';
 
 const props = defineProps<{
@@ -81,6 +84,7 @@ const tabs = computed(() => [
     },
     { key: 'monitor', label: 'Monitor', href: monitor(args.value) },
     { key: 'results', label: 'Results', href: results(args.value) },
+    { key: 'analytics', label: 'Analytics', href: analytics(args.value) },
 ]);
 
 const readyCount = computed(
@@ -172,13 +176,7 @@ function remove() {
                 >
                     <ArchiveRestore /> Unarchive
                 </Button>
-                <DropdownMenu
-                    v-if="
-                        quiz.can.unpublish ||
-                        quiz.can.archive ||
-                        quiz.can.delete
-                    "
-                >
+                <DropdownMenu>
                     <DropdownMenuTrigger as-child>
                         <Button
                             variant="outline"
@@ -189,6 +187,9 @@ function remove() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        <DropdownMenuItem @click="post(duplicate.url(args))">
+                            <Copy /> Duplicate
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                             v-if="quiz.can.unpublish"
                             @click="post(unpublish.url(args))"

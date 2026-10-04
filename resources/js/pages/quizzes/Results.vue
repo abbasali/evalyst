@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Eye, EyeOff, Inbox, Link2, Send, Users } from '@lucide/vue';
+import { Download, Eye, EyeOff, Inbox, Link2, Send, Users } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import CopyButton from '@/components/CopyButton.vue';
@@ -13,6 +13,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { useCourse } from '@/composables/useCourse';
 import { formatInCourseTz } from '@/lib/datetime';
 import { marks } from '@/lib/grading';
+import { exportMethod } from '@/routes/assessments';
 import { show as attemptShow } from '@/routes/attempts';
 import { index } from '@/routes/quizzes';
 import { release as releaseRoute, unrelease } from '@/routes/quizzes/results';
@@ -222,6 +223,11 @@ function toggleRelease() {
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+                <Button variant="outline" as-child class="order-last ml-auto">
+                    <a :href="exportMethod.url(args)"
+                        ><Download /> Export CSV</a
+                    >
+                </Button>
                 <NativeSelect v-model="statusFilter" class="w-44">
                     <option value="">All statuses</option>
                     <option value="not_started">Not started</option>

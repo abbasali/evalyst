@@ -18,6 +18,8 @@ const warned = {
     five: remaining.value <= 5 * 60_000,
     one: remaining.value <= 60_000,
 };
+// Announced once to screen readers (the ticking label itself is not announced).
+const announcement = ref('');
 let expired = false;
 let interval: ReturnType<typeof setInterval> | undefined;
 
@@ -30,11 +32,13 @@ function tick() {
 
     if (!warned.five && remaining.value <= 5 * 60_000) {
         warned.five = true;
+        announcement.value = '5 minutes left.';
         toast.warning('5 minutes left.');
     }
 
     if (!warned.one && remaining.value <= 60_000) {
         warned.one = true;
+        announcement.value = '1 minute left.';
         toast.error('1 minute left. Your answers are saved automatically.');
     }
 
@@ -86,5 +90,6 @@ const label = computed(() => {
     >
         <Clock class="size-3.5" />
         {{ label }}
+        <span class="sr-only" aria-live="polite">{{ announcement }}</span>
     </div>
 </template>
