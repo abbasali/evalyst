@@ -159,3 +159,13 @@ The instructor picked these from a list of options:
 - The review form sends only the rule scores the instructor changed. AI and partial automated scores don't need to be in 0.5 steps. Publishing checks scores against the rules' **current** marks, and recalculates `max_score`.
 - `ProjectGrader` puts everything from the repository (commit messages, paths and files) in one `<repository>` block. Messages and paths are collapsed to a single line.
 - `PathFilter` matches ignore patterns case-insensitively. A trailing `/` or a plain folder name in the extra ignore paths covers the whole folder. Common secret files (`*.pem`, `*.key`, `id_rsa*`, `auth.json`, `.npmrc`) are never fetched.
+
+**D-028 — Analytics, exports and duplication** · 2026-10-05
+
+- The dashboard shows open work, the next 14 days, closed work with unreleased results (with a Release button), the review count, this month's AI spend, and the last 10 audit entries. An empty course shows three getting-started steps.
+- Exports are one route, `assessments/{assessment}/export.csv`, for both types. They are streamed with a UTF-8 BOM, cells that look like formulas are escaped, and decimals are written as plain numbers. The gradebook (`gradebook.csv`) has one column per published or archived assessment and includes only scores the student can see (final, published and released). A comment row at the top explains the blanks.
+- Duplicating copies settings and questions (shared, not duplicated) or rules. It sets a deadline one week ahead, clears `opens_at` and the hard cutoff, issues a new shared code, and opens the copy's settings.
+- Question analytics flag a question only once it has at least 5 graded attempts, so small classes don't get noisy flags.
+- The gradebook leaves an assessment's column blank until its results are released. It loads students in chunks with their participants eager-loaded. Column headers carry the type, so two assessments with the same title can be told apart.
+- The dashboard's course comes from the URL, and "this month" (dashboard and AI usage) starts at midnight on the 1st in the course timezone. Releasing from the dashboard asks for confirmation first.
+- Duplicating skips questions that have since been deleted from the bank.

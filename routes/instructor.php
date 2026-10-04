@@ -1,13 +1,17 @@
 <?php
 
+use App\Http\Controllers\Instructor\AiUsageController;
 use App\Http\Controllers\Instructor\AssignmentAccessController;
 use App\Http\Controllers\Instructor\AssignmentController;
 use App\Http\Controllers\Instructor\AssignmentRuleController;
 use App\Http\Controllers\Instructor\AssignmentSubmissionController;
 use App\Http\Controllers\Instructor\AttemptController;
+use App\Http\Controllers\Instructor\DuplicateAssessmentController;
+use App\Http\Controllers\Instructor\ExportController;
 use App\Http\Controllers\Instructor\QuestionController;
 use App\Http\Controllers\Instructor\QuestionGenerationController;
 use App\Http\Controllers\Instructor\QuizAccessController;
+use App\Http\Controllers\Instructor\QuizAnalyticsController;
 use App\Http\Controllers\Instructor\QuizController;
 use App\Http\Controllers\Instructor\QuizMonitorController;
 use App\Http\Controllers\Instructor\QuizPreviewController;
@@ -58,6 +62,7 @@ Route::prefix('quizzes/{quiz}')->name('quizzes.')->group(function () {
     Route::delete('questions/{assessmentQuestion}', [QuizQuestionController::class, 'destroy'])->name('questions.destroy');
 
     Route::get('monitor', [QuizMonitorController::class, 'show'])->name('monitor');
+    Route::get('analytics', [QuizAnalyticsController::class, 'show'])->name('analytics');
     Route::get('preview', [QuizPreviewController::class, 'show'])->name('preview');
     Route::post('participants/{participant}/allow-resume', [QuizMonitorController::class, 'allowResume'])->name('participants.allow-resume');
     Route::post('participants/{participant}/reset-attempt', [QuizMonitorController::class, 'reset'])->name('participants.reset');
@@ -116,6 +121,10 @@ Route::post('review/answers/{answer}/accept', [ReviewController::class, 'accept'
 Route::put('review/answers/{answer}', [ReviewController::class, 'update'])->name('review.answers.update');
 Route::post('review/answers/{answer}/regrade', [ReviewController::class, 'regrade'])->name('review.answers.regrade');
 Route::get('attempts/{attempt}', [AttemptController::class, 'show'])->name('attempts.show');
+Route::get('assessments/{assessment}/export.csv', [ExportController::class, 'assessment'])->name('assessments.export');
+Route::post('assessments/{assessment}/duplicate', DuplicateAssessmentController::class)->name('assessments.duplicate');
+Route::get('gradebook.csv', [ExportController::class, 'gradebook'])->name('gradebook');
+Route::get('ai-usage', AiUsageController::class)->name('ai-usage');
 Route::get('review/submissions/{submission}', [SubmissionReviewController::class, 'show'])->name('review.submissions.show');
 Route::put('review/submissions/{submission}', [SubmissionReviewController::class, 'update'])->name('review.submissions.update');
 Route::post('review/submissions/{submission}/regrade', [SubmissionReviewController::class, 'regrade'])->name('review.submissions.regrade');

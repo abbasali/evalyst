@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     Library,
     Settings,
+    Sparkles,
     Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -25,7 +26,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { start } from '@/routes/courses';
-import { dashboard } from '@/routes';
+import { aiUsage, dashboard } from '@/routes';
 import { index as assignmentsIndex } from '@/routes/assignments';
 import { index as questionsIndex } from '@/routes/questions';
 import { index as quizzesIndex } from '@/routes/quizzes';
@@ -79,6 +80,11 @@ const mainNavItems = computed<NavItem[]>(() => {
 const footerNavItems = computed<NavItem[]>(() =>
     page.props.currentTeam
         ? [
+              {
+                  title: 'AI usage',
+                  href: aiUsage(page.props.currentTeam.slug).url,
+                  icon: Sparkles,
+              },
               {
                   title: 'Course settings',
                   href: courseSettings(page.props.currentTeam.slug).url,

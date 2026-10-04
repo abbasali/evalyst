@@ -125,12 +125,12 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M11 — Dashboard, analytics & exports → [milestones/M11-analytics-and-polish.md](milestones/M11-analytics-and-polish.md)
 
-- [ ] **M11.1** Course dashboard (active/upcoming assessments, pending reviews, recent activity)
-- [ ] **M11.2** Question analytics per quiz (difficulty index, option distribution)
-- [ ] **M11.3** CSV exports: assessment results, course gradebook
-- [ ] **M11.4** AI cost panel per course
-- [ ] **M11.5** Duplicate assessment
-- [ ] **M11.6** Responsive + accessibility + dark-mode pass on student pages
+- [x] **M11.1** Course dashboard (active/upcoming assessments, pending reviews, recent activity)
+- [x] **M11.2** Question analytics per quiz (difficulty index, option distribution)
+- [x] **M11.3** CSV exports: assessment results, course gradebook
+- [x] **M11.4** AI cost panel per course — `{course}/ai-usage`, linked from the sidebar footer and the dashboard
+- [x] **M11.5** Duplicate assessment
+- [x] **M11.6** Responsive + accessibility + dark-mode pass on student pages — checked at 360px in light and dark: the timer stays visible, the question map is a sheet, ←/→ navigation and dark highlight.js were already in place. Added: a polite timer announcement at 5 and 1 minutes, `role="alert"` on form errors, and "Join with your code" (quizzes and assignments share /join)
 
 ## M12 — Deploy to Laravel Cloud → [milestones/M12-deploy.md](milestones/M12-deploy.md)
 

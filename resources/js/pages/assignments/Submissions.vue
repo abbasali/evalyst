@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
+    Download,
     Eye,
     EyeOff,
     GitCommitHorizontal,
@@ -22,6 +23,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { useCourse } from '@/composables/useCourse';
 import { formatInCourseTz } from '@/lib/datetime';
 import { marks } from '@/lib/grading';
+import { exportMethod } from '@/routes/assessments';
 import { index } from '@/routes/assignments';
 import {
     release as releaseRoute,
