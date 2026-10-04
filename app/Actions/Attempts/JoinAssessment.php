@@ -6,7 +6,6 @@ use App\Enums\AccessMode;
 use App\Models\Assessment;
 use App\Models\Participant;
 use App\Models\Student;
-use App\Support\AccessCode;
 use Illuminate\Validation\ValidationException;
 
 class JoinAssessment
@@ -21,17 +20,16 @@ class JoinAssessment
     {
         $code = static::normalize($code);
 
-        if (strlen($code) === AccessCode::ROSTER_LENGTH) {
-            $participant = Participant::query()->where('access_code', $code)->with('assessment')->first();
+        // Codes are unique across roster and shared codes; older 8-character roster codes still work.
+        $participant = $code !== '' ? Participant::query()->where('access_code', $code)->with('assessment')->first() : null;
 
-            if ($participant && $participant->assessment->access_mode === AccessMode::Roster) {
-                $this->ensureJoinable($participant->assessment, $participant);
+        if ($participant && $participant->assessment->access_mode === AccessMode::Roster) {
+            $this->ensureJoinable($participant->assessment, $participant);
 
-                return $participant;
-            }
+            return $participant;
         }
 
-        $assessment = strlen($code) === AccessCode::SHARED_LENGTH
+        $assessment = $participant === null && $code !== ''
             ? Assessment::query()->where('shared_code', $code)->where('access_mode', AccessMode::SharedCode)->first()
             : null;
 

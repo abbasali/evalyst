@@ -38,7 +38,7 @@ Times are entered and displayed in the course timezone and stored in UTC.
 
 ### Roster (`roster`)
 
-- The "Participants" tab lists the course roster with checkboxes and "select all". Saving creates `participants` for the selected students, each with an 8-character `access_code` (alphabet `ACDEFHJKMNPRTWXY3479` (no look-alikes, D-020), unique across the whole table, retried on collision).
+- The "Participants" tab lists the course roster with checkboxes and "select all". Saving creates `participants` for the selected students, each with a 6-character `access_code` (alphabet `ACDEFHJKMNPRTWXY3479` (no look-alikes, D-020), unique across the whole table, retried on collision).
 - A student can be added at any time, including while the quiz is open. They can be removed only if they haven't started.
 - Per-row action **Regenerate code**: the old code stops working immediately.
 - **Codes sheet:** a printable page (one card per student: name, roll number, code, join URL `/join`) and a **CSV download** (roll_number, name, code).

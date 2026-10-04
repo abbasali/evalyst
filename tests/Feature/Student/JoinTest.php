@@ -97,3 +97,13 @@ it('asks again when the roll number is blank after normalising', function () {
     $this->post(route('student.join.store'), ['code' => $quiz->shared_code, 'name' => 'Asha', 'roll_number' => '  '])
         ->assertInvalid(['roll_number']);
 });
+
+it('still accepts an older 8-character roster code', function () {
+    $quiz = Assessment::factory()->open()->rosterMode()->create();
+    $participant = Participant::factory()->for($quiz)->create(['access_code' => 'ACDEFHJK']);
+
+    $this->post(route('student.join.store'), ['code' => 'acde-fhjk'])
+        ->assertRedirect(route('student.landing', $quiz->public_id));
+
+    expect($participant->fresh()->joined_at)->not->toBeNull();
+});

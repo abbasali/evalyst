@@ -178,3 +178,7 @@ The instructor picked these from a list of options:
 - Open answers are still graded when **each student submits**, not when the quiz closes. Submissions are spread out, except when everyone is auto-submitted at the deadline. In that case the `openai` limiter (60/min, `EVALYST_AI_RATE_LIMIT`) works through the backlog in a few minutes.
 - Instructors can release results early in automatic mode. Releasing isn't allowed while students can still take the quiz if correct answers would be shown. Results can be hidden again until automatic release is due.
 - Student results pages check for new grades every 30 seconds (slower in background tabs) for up to 30 minutes, until everything is released and published.
+
+**D-030 — All access codes are 6 characters** · 2026-10-05
+Roster codes are now 6 characters, like shared codes (this replaces the 8-character roster codes from D-020). Every new code is checked against both `participants.access_code` and `assessments.shared_code`, so a code can't be both. `/join` looks for a roster code first, then a shared code, whatever the length, so 8-character roster codes issued earlier keep working. The 20-character alphabet gives about 6.4×10⁷ codes. Together with the join throttle (10 per minute per browser session), guessing one is impractical.
+_Why:_ the instructor wanted a single, short code format for students.
