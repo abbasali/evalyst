@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToCourse;
+use App\Enums\AssessmentStatus;
 use App\Enums\ChoiceScoringPolicy;
 use App\Enums\CodeLanguage;
 use App\Enums\Difficulty;
@@ -79,6 +80,24 @@ class Question extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return HasMany<AssessmentQuestion, $this>
+     */
+    public function assessmentQuestions(): HasMany
+    {
+        return $this->hasMany(AssessmentQuestion::class);
+    }
+
+    /**
+     * Used in a published (not draft or archived) assessment; such questions can't be deleted.
+     */
+    public function isInPublishedAssessment(): bool
+    {
+        return $this->assessmentQuestions()
+            ->whereHas('assessment', fn (Builder $query) => $query->where('status', AssessmentStatus::Published))
+            ->exists();
     }
 
     public function isLocked(): bool

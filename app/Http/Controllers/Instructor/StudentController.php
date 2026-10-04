@@ -66,7 +66,12 @@ class StudentController extends Controller
 
     public function destroy(Team $currentTeam, Student $student): RedirectResponse
     {
-        // Once assessments exist (M05), students with participants can't be deleted.
+        if ($student->participants()->exists()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __(':name has taken part in an assessment and can\'t be deleted.', ['name' => $student->name])]);
+
+            return back();
+        }
+
         $student->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Student removed.')]);

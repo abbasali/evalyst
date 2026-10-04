@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\GeneratesUniqueTeamSlugs;
 use App\Concerns\HasAuditLogs;
+use App\Enums\AssessmentType;
 use App\Enums\TeamRole;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -29,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, Membership> $memberships
  * @property-read Collection<int, User> $members
  * @property-read Collection<int, Student> $students
+ * @property-read Collection<int, Assessment> $assessments
  */
 #[Fillable(['name', 'slug', 'description', 'timezone', 'is_personal'])]
 class Team extends Model
@@ -121,6 +123,24 @@ class Team extends Model
     public function questionGenerations(): HasMany
     {
         return $this->hasMany(QuestionGeneration::class);
+    }
+
+    /**
+     * @return HasMany<Assessment, $this>
+     */
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
+    /**
+     * Also resolves the scoped `{quiz}` route binding, so an assignment ID gives 404.
+     *
+     * @return HasMany<Assessment, $this>
+     */
+    public function quizzes(): HasMany
+    {
+        return $this->hasMany(Assessment::class)->where('type', AssessmentType::Quiz);
     }
 
     /**
