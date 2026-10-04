@@ -104,7 +104,7 @@ class AppServiceProvider extends ServiceProvider
         // Per results link (and a generous per-IP ceiling), so a class behind one NAT isn't blocked.
         RateLimiter::for('results', fn (Request $request) => [
             Limit::perMinute(30)->by('results:'.$request->route('participant')),
-            Limit::perMinute(600)->by('results-ip:'.$request->ip()),
+            Limit::perMinute(2000)->by('results-ip:'.$request->ip()),
         ]);
 
         // Each submit calls GitHub twice; keep a student from hammering it.

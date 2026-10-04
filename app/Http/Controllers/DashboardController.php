@@ -74,12 +74,16 @@ class DashboardController extends Controller
         $active = $team->assessments()->inState('open')->withCount($counts)->orderBy('closes_at')->limit(10)->get()->map($row);
         $upcoming = $team->assessments()->inState('upcoming')->where('opens_at', '<=', now()->addDays(14))
             ->withCount('participants')->orderBy('opens_at')->limit(5)->get()->map($row);
+        // Closed with results still hidden: manual mode, or automatic mode held back (a student is
+        // still mid-attempt, or a personal deadline hasn't passed).
         $unreleased = $team->assessments()->inState('closed')->withCount($counts)
-            ->where('release_mode', ReleaseMode::Manual)
             ->whereNull('results_released_at')
             ->latest('closes_at')
-            ->limit(5)
+            ->limit(10)
             ->get()
+            ->filter(fn (Assessment $assessment) => $assessment->release_mode === ReleaseMode::Manual || ! $assessment->autoReleaseDue())
+            ->take(5)
+            ->values()
             ->map($row);
 
         $activity = AuditLog::query()

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Actions\Assessments\ReleaseResults;
 use App\Enums\AnswerGradingStatus;
-use App\Enums\ReleaseMode;
+use App\Enums\AttemptStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Instructor\Concerns\PresentsQuiz;
 use App\Models\Assessment;
@@ -63,6 +63,7 @@ class QuizResultsController extends Controller
                 'mode' => $quiz->release_mode->value,
                 'released' => $quiz->resultsReleased(),
                 'released_at' => $quiz->results_released_at?->toIso8601String(),
+                'can_unrelease' => $quiz->results_released_at !== null && ! $quiz->autoReleaseDue(),
                 'show_answers' => $quiz->show_answers_after_release,
             ],
         ]);
@@ -70,7 +71,16 @@ class QuizResultsController extends Controller
 
     public function release(Team $currentTeam, Assessment $quiz, Request $request, ReleaseResults $release): RedirectResponse
     {
-        abort_if($quiz->isDraft() || $quiz->release_mode === ReleaseMode::Automatic, 422);
+        // Also allowed in automatic mode, to release early.
+        abort_if($quiz->isDraft(), 422);
+
+        // Correct answers must not reach students while classmates can still take the quiz.
+        if ($quiz->isQuiz() && $quiz->show_answers_after_release && ! $quiz->autoReleaseDue()
+            && (! $quiz->isClosed() || $quiz->attempts()->where('attempts.status', AttemptStatus::InProgress)->exists())) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Students can still take this quiz, and releasing would show them the correct answers. Wait until it closes, or turn off "Show correct answers" in Settings first.')]);
+
+            return back();
+        }
 
         $release->release($request->user(), $quiz);
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Results released. Students can open their results links.')]);
@@ -80,7 +90,8 @@ class QuizResultsController extends Controller
 
     public function unrelease(Team $currentTeam, Assessment $quiz, Request $request, ReleaseResults $release): RedirectResponse
     {
-        abort_if($quiz->release_mode === ReleaseMode::Automatic, 422);
+        // Once automatic release is due, hiding results again isn't possible.
+        abort_if($quiz->autoReleaseDue(), 422, __('Results are released automatically now; switch to manual release to hide them.'));
 
         $release->unrelease($request->user(), $quiz);
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Results hidden from students again.')]);

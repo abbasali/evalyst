@@ -79,7 +79,7 @@ const label = computed(() => {
         :aria-label="`Time left ${label}`"
         :class="
             cn(
-                'flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-sm font-semibold tabular-nums transition-colors',
+                'flex shrink-0 items-center gap-2 rounded-full border-2 px-3.5 py-1 font-mono text-xl font-bold whitespace-nowrap tabular-nums shadow-sm transition-colors sm:px-4 sm:text-2xl',
                 remaining <= 60_000
                     ? 'animate-pulse border-red-500/50 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
                     : remaining <= 5 * 60_000
@@ -88,7 +88,7 @@ const label = computed(() => {
             )
         "
     >
-        <Clock class="size-3.5" />
+        <Clock class="size-4 sm:size-5" />
         {{ label }}
         <span class="sr-only" aria-live="polite">{{ announcement }}</span>
     </div>

@@ -97,7 +97,7 @@ function back() {
                             autocapitalize="characters"
                             spellcheck="false"
                             inputmode="text"
-                            placeholder="7KMXR4TA"
+                            placeholder="K7MX4T"
                             class="h-12 text-center font-mono text-xl tracking-[0.3em] placeholder:text-muted-foreground/40"
                             :aria-invalid="!!form.errors.code"
                             @input="onCodeInput"

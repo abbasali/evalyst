@@ -2,6 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import AppToaster from '@/components/AppToaster.vue';
 
 /**
  * Minimal layout for students: no sidebar, course + quiz title, and a slot for the timer.
@@ -59,5 +60,6 @@ const context = computed(
         >
             <slot />
         </main>
+        <AppToaster />
     </div>
 </template>

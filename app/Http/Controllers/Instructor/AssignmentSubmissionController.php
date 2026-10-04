@@ -80,6 +80,7 @@ class AssignmentSubmissionController extends Controller
                 'mode' => $assignment->release_mode->value,
                 'released' => $assignment->resultsReleased(),
                 'released_at' => $assignment->results_released_at?->toIso8601String(),
+                'can_unrelease' => $assignment->results_released_at !== null && ! $assignment->autoReleaseDue(),
             ],
             'lateOverrides' => LateOverride::options(),
         ]);

@@ -49,6 +49,7 @@ const props = defineProps<
             mode: 'manual' | 'automatic';
             released: boolean;
             released_at: string | null;
+            can_unrelease: boolean;
             show_answers: boolean;
         };
     }
@@ -169,9 +170,14 @@ function toggleRelease() {
                         }}
                     </p>
                     <p class="text-muted-foreground">
-                        <template v-if="release.mode === 'automatic'">
+                        <template
+                            v-if="
+                                release.mode === 'automatic' &&
+                                !release.released
+                            "
+                        >
                             Released automatically once the quiz closes and
-                            everyone has finished.
+                            everyone has finished. You can release early.
                         </template>
                         <template v-else-if="release.released">
                             Released
@@ -206,7 +212,8 @@ function toggleRelease() {
                     </Button>
                     <Button
                         v-if="
-                            release.mode === 'manual' && quiz.state !== 'draft'
+                            quiz.state !== 'draft' &&
+                            (!release.released || release.can_unrelease)
                         "
                         :variant="release.released ? 'outline' : 'default'"
                         :disabled="processing"
@@ -216,7 +223,9 @@ function toggleRelease() {
                         {{
                             release.released
                                 ? 'Hide results'
-                                : 'Release results'
+                                : release.mode === 'automatic'
+                                  ? 'Release now'
+                                  : 'Release results'
                         }}
                     </Button>
                 </div>
