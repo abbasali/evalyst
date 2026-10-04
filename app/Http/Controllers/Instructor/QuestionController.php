@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Instructor;
 
 use App\Actions\Questions\DuplicateQuestion;
 use App\Actions\Questions\SaveQuestion;
+use App\Enums\AssessmentStatus;
 use App\Enums\ChoiceScoringPolicy;
 use App\Enums\CodeLanguage;
 use App\Enums\Difficulty;
@@ -124,7 +125,12 @@ class QuestionController extends Controller
 
     public function destroy(Team $currentTeam, Question $question): RedirectResponse
     {
-        // From M05: blocked while the question is in a published assessment.
+        if ($question->isInPublishedAssessment()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('This question is in a published quiz. Remove it from the quiz (or archive the quiz) first.')]);
+
+            return back();
+        }
+
         $question->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Question deleted.')]);
@@ -183,10 +189,17 @@ class QuestionController extends Controller
                     ->map(fn (int $id) => ['question_id' => $id, 'tag_id' => $data['tag_id']])->all(),
             ),
             'remove_tag' => DB::table('question_tag')->whereIn('question_id', $ids)->where('tag_id', $data['tag_id'])->delete(),
-            default => $currentTeam->questions()->whereKey($ids)->get()->each->delete()->count(),
+            // Questions in a published assessment are skipped.
+            default => $currentTeam->questions()->whereKey($ids)
+                ->whereDoesntHave('assessmentQuestions.assessment', fn ($query) => $query->where('status', AssessmentStatus::Published))
+                ->get()->each->delete()->count(),
         });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice(':count question updated.|:count questions updated.', $count)]);
+        $skipped = $request->input('action') === 'delete' ? $ids->count() - $count : 0;
+
+        Inertia::flash('toast', $skipped > 0
+            ? ['type' => 'warning', 'message' => trans_choice(':count question updated.|:count questions updated.', $count).' '.trans_choice(':count skipped because it is in a published quiz.|:count skipped because they are in a published quiz.', $skipped)]
+            : ['type' => 'success', 'message' => trans_choice(':count question updated.|:count questions updated.', $count)]);
 
         return back();
     }

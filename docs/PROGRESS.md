@@ -62,12 +62,12 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M05 — Quiz builder & access → [milestones/M05-quiz-builder.md](milestones/M05-quiz-builder.md)
 
-- [ ] **M05.1** Migrations/models/enums: assessments (shared + quiz columns), assessment_questions, participants
-- [ ] **M05.2** Quiz CRUD + settings form (schedule, duration, shuffles, release mode, threshold)
-- [ ] **M05.3** Question picker: add from bank with filters, reorder, override marks, totals
-- [ ] **M05.4** Access: roster mode (pick students → codes, regenerate, printable/CSV list)
-- [ ] **M05.5** Access: shared-code mode (generate/rotate code)
-- [ ] **M05.6** Publish checks + editing restrictions once attempts exist; archive
+- [x] **M05.1** Migrations/models/enums: assessments (shared + quiz columns), assessment_questions, participants — the `attempts` table, `Attempt` model and `AttemptStatus` enum are created here too (D-018)
+- [x] **M05.2** Quiz CRUD + settings form (schedule, duration, shuffles, release mode, threshold) — each tab is its own page (`quizzes/Settings|Questions|Access`) inside `components/quizzes/QuizShell.vue`; list tabs: Open, Upcoming, Drafts, Closed, Archived
+- [x] **M05.3** Question picker: add from bank with filters, reorder, override marks, totals — bank browser is a side sheet (JSON endpoint `quizzes.questions.bank`); marks in 0.5 steps
+- [x] **M05.4** Access: roster mode (pick students → codes, regenerate, printable/CSV list)
+- [x] **M05.5** Access: shared-code mode (generate/rotate code)
+- [x] **M05.6** Publish checks + editing restrictions once attempts exist; archive — opens_at and track_focus are locked too once started; archive only from published; delete only drafts without participants (D-019)
 
 ## M06 — Quiz taking (student) → [milestones/M06-quiz-taking.md](milestones/M06-quiz-taking.md)
 

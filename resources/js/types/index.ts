@@ -5,3 +5,4 @@ export * from './ui';
 export * from './pagination';
 export * from './students';
 export * from './questions';
+export * from './quizzes';

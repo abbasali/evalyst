@@ -30,8 +30,8 @@ Times are entered and displayed in the course timezone and stored in UTC.
 
 ## Question picker (edit page, "Questions" tab)
 
-- **Left:** the selected questions, in order. Each shows position, excerpt, type, editable **marks** (defaults to `default_marks`, 0.5 steps), a remove button, and drag-to-reorder. The footer shows the question count and total marks.
-- **Right:** a bank browser with the same filters as the question bank (type, tag, difficulty, search). Shows "Add" per row and "Add all filtered". Questions already added are disabled. Soft-deleted questions don't appear. A ⚠ badge appears on questions with `needs_verification`, and adding one asks for confirmation.
+- **List:** the selected questions, in order. Each shows position, excerpt (click to preview), type, editable **marks** (defaults to `default_marks`, 0.5 steps), a remove button, and up/down reorder buttons. The footer shows the question count and total marks.
+- **"Add questions" side sheet:** a bank browser with the same filters as the question bank (type, tag, difficulty, search), multi-select across pages with "select all on this page". Questions already added are disabled. Soft-deleted questions don't appear. A ⚠ badge appears on questions with `needs_verification`, and adding one shows a warning and an "Add anyway" button.
 - A question can appear only once per quiz.
 
 ## Access modes
@@ -49,7 +49,7 @@ Times are entered and displayed in the course timezone and stored in UTC.
 - **Rotate code:** issues a new code, and the old one stops working for _new_ joins. Students who already joined can still resume (see quiz-taking.md).
 - Participants appear on the Participants tab as they join.
 
-The access mode can be changed only while no participant has started.
+The access mode can be changed only while the quiz has no participants (D-019).
 
 ## Status lifecycle
 

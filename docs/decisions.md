@@ -68,3 +68,18 @@ _Why:_ it's less code than a separate `InvitationRegistrationController`, and th
 
 **D-017 — AI SDK specifics** · 2026-10-04
 We use `laravel/ai` v1.0.1. Agents extend `App\Ai\Agents\StructuredAgent`, whose `provider()`/`model()` methods read `config('evalyst.ai.*')`, and whose instructions live in `resources/prompts/*.md`. `config/ai.php` sets `OPENAI_STORE=false` by default, so OpenAI doesn't keep prompts that contain student work. The model ID `gpt-5.4-mini` and its price ($0.75/$4.50 per 1M tokens) come from public pricing pages as of 2026-10. Check them against the OpenAI dashboard before going live.
+
+**D-018 — The `attempts` table is created in M05** · 2026-10-04
+M05.1 also creates the `attempts` table (columns as in 02-data-model.md), the `Attempt` model/factory and `AttemptStatus`. M06 builds the student flow on it.
+_Why:_ M05.6 must lock a quiz "once any attempt exists", and its restriction tests need real attempt rows. Creating the table early is simpler than a stand-in flag.
+
+**D-019 — Quiz lifecycle details** · 2026-10-04
+
+- Once a student has started, these settings are locked in addition to the spec's list: `opens_at` and `track_focus`. Allowed: title, instructions, extending `closes_at`, release mode, show-answers, threshold, adding roster students.
+- Archived quizzes are read-only (settings, questions, access). Only a published quiz can be archived, and not while students may still be mid-attempt (it must be closed or have no attempts). Unarchiving returns it to `published`.
+- A published quiz keeps passing its publish checks: it can't lose its last question or last roster student, and its access mode can't change (move it back to draft first).
+- Every change to a quiz's question list locks the assessment row and re-checks "no attempts" inside the transaction. M06's `StartAttempt` must lock the same row.
+- Only a draft with no participants can be deleted (soft delete). Anything else is archived instead.
+- Switching access mode is blocked once any participant exists (stricter than "has started"), because roster codes and shared-code joins can't be mixed. Switching back to roster clears the shared code.
+- A bank question that is soft-deleted while in a draft quiz blocks publishing ("Remove questions deleted from the bank").
+- The quiz edit screen is one Inertia page per tab (`quizzes/Settings`, `quizzes/Questions`, `quizzes/Access`) sharing `components/quizzes/QuizShell.vue`, so each tab has its own URL. Monitor and Results show "soon" until M06/M08.
