@@ -88,3 +88,22 @@ _Why:_ M05.6 must lock a quiz "once any attempt exists", and its restriction tes
 The code alphabet is `ACDEFHJKMNPRTWXY3479` (20 characters). Both sides of each confusable pair are left out: `0/O/Q`, `1/I/L`, `2/Z`, `5/S`, `6/G`, `8/B`, `U/V`. Codes stay 8 characters (roster, ~2.6×10¹⁰ combinations) and 6 (shared, ~6.4×10⁷), which is plenty with unique checks and join rate limiting.
 _Why:_ codes are read off printed cards and projectors and typed by students in a hurry. Leaving out only one side of a pair (e.g. dropping `O` but keeping `Q`) still causes wrong entries.
 
+**D-021 — Anti-cheating measures** · 2026-10-04
+The instructor picked these from a list of options:
+
+- **Watermark** (always on): the quiz screen shows the student's name and roll number, faint and repeated, so photos and screenshots can be traced.
+- **No copying question text** (always on): question and option text can't be selected, copied, cut, dragged or right-clicked. This is a deterrent only.
+- **One-way navigation** (`assessments.one_way_navigation`, default off): no Previous button, no flagging, and the map only allows the next question. The server enforces it through `attempts.furthest_position`: earlier questions redirect, saves to them return 409, and the review page needs the last question to have been reached.
+- **Require fullscreen** (`assessments.require_fullscreen`, default off): an overlay hides the quiz until the browser is fullscreen. Browsers without the Fullscreen API (iPhone Safari) are let through. Each exit is logged as a `fullscreen_exited` event (M06.10).
+- **Paste detection** (part of `track_focus`): pasting into a text or code answer logs a `pasted` event with the pasted length. Nothing is blocked. It shows on the live monitor (M06.11) and, later, in the review inbox (M08).
+  Both new settings are locked once a student has started.
+  Not adopted for now: question pools, answer-similarity checks, timing flags, IP flags, a start PIN, question variants, lockdown browsers and webcam proctoring.
+
+**D-022 — Student flow details** · 2026-10-04
+
+- URLs: landing `/a/{public_id}`, question `/attempts/{public_id}/q/{n}`, plus `/review`, `/submit` and `/done` under the attempt.
+- The join throttle answers with an inline form error ("Too many tries…") instead of a bare 429 page, because the student is in the middle of typing a code. It is 10 per minute per **browser session**, plus a ceiling of 300 per minute per IP (`join_attempts_per_ip_per_minute`). A plain per-IP limit would lock out a class that shares one campus IP.
+- Autosave addresses answers by **position** (`PUT /attempts/{id}/answers/{n}`), and options are sent as their **displayed index**, never as database IDs. Sorting IDs would otherwise reveal the authored option order and undo the shuffle.
+- The client keeps one save queue per attempt. It never leaves a question, or submits, while an answer is unsaved. A local copy is restored only if it was edited after the server's last save. A 401/409 from a save (session gone, time up, question closed, continued in another browser) stops saving and redirects with a message.
+- A roster code must belong to a roster-mode quiz, and a shared code to a shared-mode quiz. Codes of the wrong length never match.
+- Resuming in shared-code mode uses the `attempt_{public_id}` cookie. Every attempt route checks it, not only the landing page, so a second browser that joins with the same roll number can't continue the attempt by URL.

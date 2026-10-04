@@ -79,7 +79,8 @@ return [
     ],
 
     'student' => [
-        'join_attempts_per_minute' => 10,
+        'join_attempts_per_minute' => 10,      // per browser session
+        'join_attempts_per_ip_per_minute' => 300, // a class behind one NAT
     ],
 
 ];

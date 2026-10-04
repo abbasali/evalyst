@@ -61,6 +61,8 @@ export type QuizSettingsForm = {
     shuffle_options: boolean;
     show_answers_after_release: boolean;
     track_focus: boolean;
+    one_way_navigation: boolean;
+    require_fullscreen: boolean;
     release_mode: 'manual' | 'automatic';
     auto_publish_threshold: number | '';
     access_mode: AccessMode;

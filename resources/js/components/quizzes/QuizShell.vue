@@ -210,10 +210,11 @@ function remove() {
             <Lock class="size-4" />
             <AlertTitle>Students have started</AlertTitle>
             <AlertDescription>
-                Questions, marks, duration, shuffle, focus tracking and access
-                mode are locked so every student is scored the same way. You can
-                still edit the title and instructions, extend the closing time,
-                change how results are released, and add students.
+                Questions, marks, duration, and the access, shuffle and
+                anti-cheating settings are locked so every student is scored the
+                same way. You can still edit the title and instructions, extend
+                the closing time, change how results are released, and add
+                students.
             </AlertDescription>
         </Alert>
 

@@ -43,6 +43,8 @@ use Illuminate\Support\Carbon;
  * @property bool $shuffle_options
  * @property bool $show_answers_after_release
  * @property bool $track_focus
+ * @property bool $one_way_navigation
+ * @property bool $require_fullscreen
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -57,7 +59,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'team_id', 'type', 'title', 'instructions', 'status', 'access_mode', 'shared_code', 'opens_at', 'closes_at',
     'release_mode', 'results_released_at', 'auto_publish_threshold', 'created_by', 'duration_minutes',
-    'shuffle_questions', 'shuffle_options', 'show_answers_after_release', 'track_focus',
+    'shuffle_questions', 'shuffle_options', 'show_answers_after_release', 'track_focus', 'one_way_navigation', 'require_fullscreen',
 ])]
 class Assessment extends Model
 {
@@ -231,6 +233,8 @@ class Assessment extends Model
             'shuffle_options' => 'boolean',
             'show_answers_after_release' => 'boolean',
             'track_focus' => 'boolean',
+            'one_way_navigation' => 'boolean',
+            'require_fullscreen' => 'boolean',
         ];
     }
 }

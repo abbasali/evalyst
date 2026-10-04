@@ -71,15 +71,15 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M06 — Quiz taking (student) → [milestones/M06-quiz-taking.md](milestones/M06-quiz-taking.md)
 
-- [ ] **M06.1** `routes/student.php`, `StudentLayout`, `/join` page, join throttling
-- [ ] **M06.2** `JoinAssessment` action: roster code / shared code + name + roll → participant; `EnsureStudentSession`
-- [ ] **M06.3** Quiz landing page (instructions, duration, question count) + `StartAttempt` (deadline, order snapshot, resume token)
-- [ ] **M06.4** Question screen: one at a time, prev/next, question map, flag; inputs for all 4 types (CodeMirror for code)
-- [ ] **M06.5** Autosave endpoint + server-side deadline enforcement + locking questions on first answer
-- [ ] **M06.6** Timer component synced to the server deadline, warnings, client-side auto-submit
-- [ ] **M06.7** Review-before-submit summary + `SubmitAttempt` + confirmation page with results link
+- [x] **M06.1** `routes/student.php`, `StudentLayout`, `/join` page, join throttling — throttle shows an inline error, not a 429 page (D-022)
+- [x] **M06.2** `JoinAssessment` action: roster code / shared code + name + roll → participant; `EnsureStudentSession`
+- [x] **M06.3** Quiz landing page (instructions, duration, question count) + `StartAttempt` (deadline, order snapshot, resume token)
+- [x] **M06.4** Question screen: one at a time, prev/next, question map, flag; inputs for all 4 types (CodeMirror for code) — plus watermark, copy blocking, one-way navigation and fullscreen gate (D-021)
+- [x] **M06.5** Autosave endpoint + server-side deadline enforcement + locking questions on first answer
+- [x] **M06.6** Timer component synced to the server deadline, warnings, client-side auto-submit
+- [x] **M06.7** Review-before-submit summary + `SubmitAttempt` + confirmation page with results link — results link 404s until M08.6
 - [ ] **M06.8** Resume rules (roster vs shared code), instructor "reset attempt"/"allow resume"
-- [ ] **M06.9** `attempts:expire` scheduled command (auto-submit)
+- [x] **M06.9** `attempts:expire` scheduled command (auto-submit)
 - [ ] **M06.10** Focus tracking → `attempt_events`
 - [ ] **M06.11** Instructor live monitor page (polling)
 - [ ] **M06.12** Instructor preview of the quiz in the student UI (no data saved)

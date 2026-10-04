@@ -24,6 +24,7 @@ class AttemptFactory extends Factory
             'started_at' => now(),
             'deadline_at' => now()->addMinutes(30),
             'question_order' => [],
+            'furthest_position' => 1,
             'resume_token' => hash('sha256', Str::random(64)),
             'max_score' => 0,
         ];

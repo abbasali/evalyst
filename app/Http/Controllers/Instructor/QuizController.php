@@ -103,6 +103,8 @@ class QuizController extends Controller
                 'shuffle_options' => $quiz->shuffle_options,
                 'show_answers_after_release' => $quiz->show_answers_after_release,
                 'track_focus' => $quiz->track_focus,
+                'one_way_navigation' => $quiz->one_way_navigation,
+                'require_fullscreen' => $quiz->require_fullscreen,
                 'release_mode' => $quiz->release_mode->value,
                 'auto_publish_threshold' => $quiz->auto_publish_threshold !== null ? (float) $quiz->auto_publish_threshold : '',
                 'access_mode' => $quiz->access_mode->value,
