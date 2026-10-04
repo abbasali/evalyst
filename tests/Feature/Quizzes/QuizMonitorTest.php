@@ -2,7 +2,6 @@
 
 use App\Actions\Attempts\StartAttempt;
 use App\Enums\AttemptEventType;
-use App\Enums\AttemptStatus;
 use App\Models\Assessment;
 use App\Models\Attempt;
 use App\Models\AuditLog;
@@ -99,7 +98,7 @@ it('force-submits an attempt in progress', function () {
 
     $this->post(route('quizzes.participants.force-submit', [$team, $quiz, $participant]))->assertRedirect();
 
-    expect($attempt->fresh()->status)->toBe(AttemptStatus::Submitted)
+    expect($attempt->fresh()->submitted_at)->not->toBeNull()
         ->and($attempt->events()->where('type', AttemptEventType::ForceSubmitted)->count())->toBe(1)
         ->and(AuditLog::where('action', 'attempt.force_submit')->count())->toBe(1);
 });

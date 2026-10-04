@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AttemptStatus;
 use Database\Factories\AttemptFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -76,6 +77,14 @@ class Attempt extends Model
     public function events(): HasMany
     {
         return $this->hasMany(AttemptEvent::class);
+    }
+
+    /**
+     * @param  Builder<Attempt>  $query
+     */
+    public function scopeForCourse(Builder $query, Team $team): void
+    {
+        $query->whereHas('participant.assessment', fn (Builder $query) => $query->where('team_id', $team->id));
     }
 
     public function isInProgress(): bool

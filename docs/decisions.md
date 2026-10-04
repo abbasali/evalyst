@@ -115,3 +115,12 @@ The instructor picked these from a list of options:
 - These actions often race a student because the monitor polls, so a stale action shows an explanatory toast instead of an error page.
 - Activity events are posted in batches at most every 5 seconds, using `fetch` with `keepalive` rather than `sendBeacon`, because the request needs Laravel's CSRF header. They're limited to 30 requests a minute per attempt.
 - The preview is its own page (`student/quiz/Preview`) that reuses the student question, map and timer components with answers kept in memory. It shows no fullscreen gate. A banner says fullscreen is required for students.
+
+**D-024 — Quiz grading details** · 2026-10-04
+
+- `GradeOpenAnswer` follows the M04 job pattern rather than `tries = 3`: `maxExceptions = 3`, `retryUntil` 6 hours (a large class can wait behind the `openai` rate limiter for a while), backoff 30/120/300s, timeout 180s. A `SkipUnlessAnswerPending` middleware runs before the overlap lock and rate limiter, so duplicates from `grading:recover` cost nothing.
+- Invalid AI output (`InvalidAiOutput`) marks the answer `failed` straight away with the reason in `grading_error`, and the job ends normally instead of calling `$this->fail()`. The `ai_run` still counts as a successful call, because the tokens were billed.
+- The validated AI suggestion is saved before the publish gate runs, so a retry after a database error doesn't pay for a second AI call.
+- The gate uses the raw confidence. `answers.ai_confidence` stores it rounded **down** to 2 decimals, so 0.795 never looks like 0.80.
+- `attempts.score` stays null until every answer is final. When a regraded answer goes to review, it keeps its earlier published score and `published_at` until the instructor decides.
+- `grading:recover` also settles attempts left in `grading` with no pending answers, and it re-queues lost `GradeAttempt` jobs.

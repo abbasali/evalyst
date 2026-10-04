@@ -1,8 +1,12 @@
 <?php
 
+use App\Actions\Attempts\StartAttempt;
+use App\Enums\AttemptStatus;
 use App\Enums\TeamRole;
 use App\Http\Middleware\EnsureStudentSession;
+use App\Models\Answer;
 use App\Models\Assessment;
+use App\Models\Attempt;
 use App\Models\Participant;
 use App\Models\Question;
 use App\Models\Team;
@@ -104,4 +108,32 @@ function openQuizWithParticipant(array $attributes = []): array
     $participant = Participant::factory()->for($quiz)->withCode()->create();
 
     return [$quiz, $participant];
+}
+
+/**
+ * A submitted attempt on openQuizWithParticipant()'s quiz (single, multiple, text, code;
+ * 2 marks each), with answers keyed by question type.
+ *
+ * @param  array<string, array<string, mixed>>  $answers  e.g. ['open_text' => ['text_answer' => '...']]
+ */
+function submittedAttempt(array $answers = [], array $quizAttributes = []): Attempt
+{
+    [, $participant] = openQuizWithParticipant($quizAttributes);
+    [$attempt] = app(StartAttempt::class)->handle($participant);
+
+    foreach ($attempt->answers()->with('question')->get() as $answer) {
+        $answer->update($answers[$answer->question->type->value] ?? []);
+    }
+
+    $attempt->update(['status' => AttemptStatus::Submitted, 'submitted_at' => now()]);
+
+    return $attempt->refresh();
+}
+
+/**
+ * The attempt's answer for a question type.
+ */
+function answerOfType(Attempt $attempt, string $type): Answer
+{
+    return $attempt->answers()->whereHas('question', fn ($query) => $query->where('type', $type))->firstOrFail();
 }
