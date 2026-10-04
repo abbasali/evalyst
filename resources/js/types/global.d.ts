@@ -23,6 +23,7 @@ declare module '@inertiajs/core' {
             sidebarOpen: boolean;
             currentTeam: Team | null;
             teams: Team[];
+            reviewCount: number;
             [key: string]: unknown;
         };
     }

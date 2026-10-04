@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\HasAuditLogs;
 use Database\Factories\ParticipantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -31,7 +32,7 @@ use Illuminate\Support\Carbon;
 class Participant extends Model
 {
     /** @use HasFactory<ParticipantFactory> */
-    use HasFactory, HasUlids;
+    use HasAuditLogs, HasFactory, HasUlids;
 
     /**
      * @return list<string>

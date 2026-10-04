@@ -2,6 +2,7 @@
 
 namespace App\Actions\Questions;
 
+use App\Actions\Audit\RecordAudit;
 use App\Enums\QuestionSource;
 use App\Enums\QuestionType;
 use App\Models\Question;
@@ -47,7 +48,9 @@ class SaveQuestion
             }
 
             if ($question) {
+                $before = $question->only(['model_answer', 'rubric', 'scoring_policy', 'default_marks']);
                 $question->update($attributes);
+                $this->auditGradingChange($user, $question, $locked, $before);
             } else {
                 $question = $team->questions()->create([
                     ...$attributes,
@@ -65,6 +68,26 @@ class SaveQuestion
 
             return $question;
         });
+    }
+
+    /**
+     * Changing how a locked (already answered) question is graded is audit-logged (D-009).
+     *
+     * @param  array<string, mixed>  $before
+     */
+    private function auditGradingChange(User $user, Question $question, bool $locked, array $before): void
+    {
+        $changed = array_keys($question->getChanges());
+        $fields = array_values(array_intersect(['model_answer', 'rubric', 'scoring_policy'], $changed));
+
+        if (! $locked || $fields === []) {
+            return;
+        }
+
+        app(RecordAudit::class)->handle($user, $question, 'question.rubric_update', [
+            'before' => array_map(fn ($value) => $value instanceof \BackedEnum ? $value->value : $value, array_intersect_key($before, array_flip($fields))),
+            'after' => array_map(fn ($value) => $value instanceof \BackedEnum ? $value->value : $value, $question->only($fields)),
+        ]);
     }
 
     /**

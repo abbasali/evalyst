@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Attempts\StartAttempt;
+use App\Enums\AnswerGradingStatus;
 use App\Enums\AttemptStatus;
 use App\Enums\TeamRole;
 use App\Http\Middleware\EnsureStudentSession;
@@ -136,4 +137,26 @@ function submittedAttempt(array $answers = [], array $quizAttributes = []): Atte
 function answerOfType(Attempt $attempt, string $type): Answer
 {
     return $attempt->answers()->whereHas('question', fn ($query) => $query->where('type', $type))->firstOrFail();
+}
+
+/**
+ * A submitted attempt in the given course whose open_text answer awaits review.
+ */
+function attemptNeedingReview(array $quizAttributes = [], array $answer = []): Attempt
+{
+    $attempt = submittedAttempt(['open_text' => ['text_answer' => 'An answer.']], $quizAttributes);
+    $attempt->answers()->update(['grading_status' => AnswerGradingStatus::Final, 'score' => 1, 'published_at' => now()]);
+    answerOfType($attempt, 'open_text')->update([
+        'grading_status' => AnswerGradingStatus::NeedsReview,
+        'score' => null,
+        'published_at' => null,
+        'ai_score' => 1.5,
+        'ai_feedback' => 'Mostly right.',
+        'ai_confidence' => 0.6,
+        'review_reasons' => ['low_confidence'],
+        ...$answer,
+    ]);
+    $attempt->update(['status' => 'grading']);
+
+    return $attempt->refresh();
 }

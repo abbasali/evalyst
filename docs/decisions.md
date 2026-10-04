@@ -124,3 +124,12 @@ The instructor picked these from a list of options:
 - The gate uses the raw confidence. `answers.ai_confidence` stores it rounded **down** to 2 decimals, so 0.795 never looks like 0.80.
 - `attempts.score` stays null until every answer is final. When a regraded answer goes to review, it keeps its earlier published score and `published_at` until the instructor decides.
 - `grading:recover` also settles attempts left in `grading` with no pending answers, and it re-queues lost `GradeAttempt` jobs.
+
+**D-025 — Review and results details** · 2026-10-04
+
+- Automatic release is worked out by `Assessment::resultsReleased()`: closed, and nobody still mid-attempt. No `assessments:auto-release` command. Manual mode stamps `results_released_at`. Unrelease exists only in manual mode.
+- Students never see model answers or rubrics, even with `show_answers_after_release` on (feature doc rule; M08.6 said to show the model answer). With it on, they see the correct options and explanations.
+- `{answer}` and `{attempt}` instructor routes are resolved through `Team::resolveChildRouteBinding()`, scoped by the assessment's course, so another course gets a 404.
+- Regrading writes one `grade.regrade` audit log **per answer**, including question-wide regrades. Choice answers are rescored at once (e.g. after a scoring policy change). Open answers go back to the AI, and their published grade stays visible until the new one is settled.
+- The question edit page offers "Regrade N answers" on locked questions. Editing a locked question's model answer, rubric or scoring policy writes `question.rubric_update`.
+- Only the instructor actions in the review inbox clear the sidebar badge cache. Changes made by jobs show up within 30 seconds.
