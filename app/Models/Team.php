@@ -144,6 +144,16 @@ class Team extends Model
     }
 
     /**
+     * Also resolves scoped `{assignment}` bindings, so a quiz ID gives 404.
+     *
+     * @return HasMany<Assessment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assessment::class)->where('type', AssessmentType::Assignment);
+    }
+
+    /**
      * @return HasMany<AiRun, $this>
      */
     public function aiRuns(): HasMany
@@ -186,6 +196,7 @@ class Team extends Model
         return match ($childType) {
             'answer' => Answer::query()->forCourse($this)->where('answers.'.($field ?? 'id'), $value)->first(),
             'attempt' => Attempt::query()->forCourse($this)->where('attempts.'.($field ?? 'id'), $value)->first(),
+            'submission' => Submission::query()->forCourse($this)->where('submissions.'.($field ?? 'id'), $value)->first(),
             default => parent::resolveChildRouteBinding($childType, $value, $field),
         };
     }

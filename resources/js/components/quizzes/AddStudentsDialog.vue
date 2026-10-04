@@ -16,12 +16,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useCourse } from '@/composables/useCourse';
-import { store } from '@/routes/quizzes/participants';
+import { store as storeAssignmentParticipants } from '@/routes/assignments/participants';
+import { store as storeQuizParticipants } from '@/routes/quizzes/participants';
 import { index as studentsIndex } from '@/routes/students';
 import type { RosterStudent } from '@/types';
 
 const props = defineProps<{
-    quizId: number;
+    kind?: 'quiz' | 'assignment';
+    assessmentId: number;
     roster: RosterStudent[];
     addedIds: number[];
 }>();
@@ -82,7 +84,10 @@ function toggleAll(value: boolean | 'indeterminate') {
 
 function add() {
     router.post(
-        store.url([slug.value, props.quizId]),
+        (props.kind === 'assignment'
+            ? storeAssignmentParticipants
+            : storeQuizParticipants
+        ).url([slug.value, props.assessmentId]),
         { student_ids: selected.value },
         {
             preserveScroll: true,
@@ -105,7 +110,8 @@ function add() {
             <DialogHeader>
                 <DialogTitle>Add students</DialogTitle>
                 <DialogDescription>
-                    Each student gets a personal access code for this quiz.
+                    Each student gets a personal access code for this
+                    {{ kind ?? 'quiz' }}.
                 </DialogDescription>
             </DialogHeader>
 

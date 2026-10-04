@@ -1,0 +1,10 @@
+{
+    "id": 2,
+    "name": "secret",
+    "full_name": "student/secret",
+    "owner": { "login": "student" },
+    "private": true,
+    "default_branch": "main",
+    "size": 10,
+    "archived": false
+}

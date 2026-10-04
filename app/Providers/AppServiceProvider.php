@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Assessment;
 use App\Models\Attempt;
+use App\Models\Team;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\DevCommands;
@@ -10,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -30,7 +33,27 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiting();
+        $this->configureRouteBindings();
         $this->configureDevCommands();
+    }
+
+    /**
+     * `{assignment}` is bound explicitly (scoped to the course in the URL, assignments only) so
+     * the quiz controllers for access, status and release can serve assignments too: Laravel
+     * passes already-bound models to them by position, whatever their parameter is called.
+     */
+    private function configureRouteBindings(): void
+    {
+        Route::bind('assignment', function (string $value, \Illuminate\Routing\Route $route) {
+            $team = $route->parameter('current_team');
+            $slug = $team instanceof Team ? $team->slug : (is_string($team) ? $team : '');
+
+            return Assessment::query()
+                ->assignments()
+                ->whereKey((int) $value)
+                ->whereHas('team', fn ($query) => $query->where('slug', $slug))
+                ->firstOrFail();
+        });
     }
 
     /**
@@ -83,6 +106,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(30)->by('results:'.$request->route('participant')),
             Limit::perMinute(600)->by('results-ip:'.$request->ip()),
         ]);
+
+        // Each submit calls GitHub twice; keep a student from hammering it.
+        RateLimiter::for('repo-submissions', fn (Request $request) => Limit::perMinute(6)->by('repo:'.($request->session()->getId() ?: $request->ip())));
 
         RateLimiter::for('question-generation', fn (Request $request) => Limit::perMinutes(10, 5)->by($request->user()?->id ?: $request->ip()));
     }

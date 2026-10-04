@@ -27,6 +27,10 @@ class QuizController extends Controller
 
     public function show(Request $request, Assessment $assessment, SubmitAttempt $submit): Response
     {
+        if ($assessment->isAssignment()) {
+            return app(AssignmentController::class)->show($request, $assessment);
+        }
+
         $participant = $this->participant($request);
         $attempt = $participant->attempt;
 
@@ -60,6 +64,8 @@ class QuizController extends Controller
 
     public function start(Request $request, Assessment $assessment, StartAttempt $start): RedirectResponse
     {
+        abort_if($assessment->isAssignment(), 404);
+
         $participant = $this->participant($request);
 
         [$attempt, $token] = $start->handle($participant);
@@ -77,6 +83,8 @@ class QuizController extends Controller
      */
     public function resume(Request $request, Assessment $assessment): RedirectResponse
     {
+        abort_if($assessment->isAssignment(), 404);
+
         $participant = $this->participant($request);
         $attempt = $participant->attempt;
 

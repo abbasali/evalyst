@@ -7,3 +7,4 @@ export * from './students';
 export * from './questions';
 export * from './quizzes';
 export * from './grading';
+export * from './assignments';

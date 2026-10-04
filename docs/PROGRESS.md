@@ -104,14 +104,14 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M09 — Assignments: setup & submission → [milestones/M09-assignments.md](milestones/M09-assignments.md)
 
-- [ ] **M09.1** Migrations/enums: assignment columns, assignment_rules, submissions, submission_rule_results
-- [ ] **M09.2** Assignment CRUD form: statement, dates, late policy, resubmission, ignore paths, rule visibility
-- [ ] **M09.3** Rule builder (automated checks with config forms + AI rules, marks, ordering)
-- [ ] **M09.4** `LatePenaltyCalculator` + effective deadline logic (pure, table-driven tests)
-- [ ] **M09.5** `GitHubClient` (repository, headCommit) + fixtures
-- [ ] **M09.6** Student assignment page + `SubmitRepository` action (validate, record SHA, lateness, resubmission)
-- [ ] **M09.7** Participant overrides UI + `ApplyParticipantOverride` (audit, recalculate score)
-- [ ] **M09.8** Instructor submissions list
+- [x] **M09.1** Migrations/enums: assignment columns, assignment_rules, submissions, submission_rule_results
+- [x] **M09.2** Assignment CRUD form: statement, dates, late policy, resubmission, ignore paths, rule visibility
+- [x] **M09.3** Rule builder (automated checks with config forms + AI rules, marks, ordering) — rules stay editable after grading (regrade from Submissions); graded rules can't be deleted (D-026)
+- [x] **M09.4** `LatePenaltyCalculator` + effective deadline logic (pure, table-driven tests)
+- [x] **M09.5** `GitHubClient` (repository, headCommit) + fixtures — tree/commits/fileContent written here too
+- [x] **M09.6** Student assignment page + `SubmitRepository` action (validate, record SHA, lateness, resubmission)
+- [x] **M09.7** Participant overrides UI + `ApplyParticipantOverride` (audit, recalculate score)
+- [x] **M09.8** Instructor submissions list
 
 ## M10 — Assignment grading → [milestones/M10-assignment-grading.md](milestones/M10-assignment-grading.md)
 

@@ -26,15 +26,27 @@ class QuizAccessController extends Controller
 
     public function show(Team $currentTeam, Assessment $quiz): Response
     {
-        $participants = $quiz->participants()
-            ->with(['student', 'attempt:id,participant_id,status'])
+        return Inertia::render('quizzes/Access', [
+            ...$this->quizShell($currentTeam, $quiz),
+            ...self::accessProps($currentTeam, $quiz),
+        ]);
+    }
+
+    /**
+     * Props for the access panel (shared code or roster with codes), used by quizzes and assignments.
+     *
+     * @return array<string, mixed>
+     */
+    public static function accessProps(Team $team, Assessment $assessment): array
+    {
+        $participants = $assessment->participants()
+            ->with(['student', 'attempt:id,participant_id,status', 'currentSubmission:id,participant_id'])
             ->get()
             ->sortBy(fn (Participant $participant) => $participant->student->roll_number, SORT_NATURAL)
             ->values();
 
-        return Inertia::render('quizzes/Access', [
-            ...$this->quizShell($currentTeam, $quiz),
-            'sharedCode' => $quiz->shared_code,
+        return [
+            'sharedCode' => $assessment->shared_code,
             'joinUrl' => url('/join'),
             'participants' => $participants->map(fn (Participant $participant) => [
                 'id' => $participant->id,
@@ -42,14 +54,14 @@ class QuizAccessController extends Controller
                 'name' => $participant->student->name,
                 'roll_number' => $participant->student->roll_number,
                 'access_code' => $participant->access_code,
-                'status' => $this->status($participant),
+                'status' => self::status($participant, $assessment),
                 'joined_at' => $participant->joined_at?->toIso8601String(),
             ]),
             // The roster picker (roster mode only); a course roster is small enough to send whole.
-            'roster' => $quiz->access_mode === AccessMode::Roster
-                ? $currentTeam->students()->orderBy('roll_number')->get(['id', 'name', 'roll_number'])
+            'roster' => $assessment->access_mode === AccessMode::Roster
+                ? $team->students()->orderBy('roll_number')->get(['id', 'name', 'roll_number'])
                 : [],
-        ]);
+        ];
     }
 
     public function storeParticipants(Request $request, Team $currentTeam, Assessment $quiz, AddParticipants $add): RedirectResponse
@@ -88,14 +100,14 @@ class QuizAccessController extends Controller
         Gate::authorize('delete', $participant);
 
         if (! $quiz->isDraft() && $quiz->participants()->count() <= 1) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('A published quiz needs at least one student. Move it back to draft first.')]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('A published :noun needs at least one student. Move it back to draft first.', ['noun' => $quiz->noun()])]);
 
             return back();
         }
 
         $participant->delete();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __(':name removed from the quiz.', ['name' => $participant->student->name])]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __(':name removed from the :noun.', ['name' => $participant->student->name, 'noun' => $quiz->noun()])]);
 
         return back();
     }
@@ -163,8 +175,12 @@ class QuizAccessController extends Controller
             ->all());
     }
 
-    private function status(Participant $participant): string
+    private static function status(Participant $participant, Assessment $assessment): string
     {
+        if ($assessment->isAssignment()) {
+            return $participant->currentSubmission ? 'submitted' : 'not_started';
+        }
+
         return match ($participant->attempt?->status) {
             null => 'not_started',
             AttemptStatus::InProgress => 'in_progress',
@@ -174,7 +190,7 @@ class QuizAccessController extends Controller
 
     private function ensureMode(Assessment $quiz, AccessMode $mode): void
     {
-        abort_unless($quiz->access_mode === $mode, 422, __('This quiz uses a different access mode.'));
+        abort_unless($quiz->access_mode === $mode, 422, __('This :noun uses a different access mode.', ['noun' => $quiz->noun()]));
     }
 
     /**

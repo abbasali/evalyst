@@ -133,3 +133,16 @@ The instructor picked these from a list of options:
 - Regrading writes one `grade.regrade` audit log **per answer**, including question-wide regrades. Choice answers are rescored at once (e.g. after a scoring policy change). Open answers go back to the AI, and their published grade stays visible until the new one is settled.
 - The question edit page offers "Regrade N answers" on locked questions. Editing a locked question's model answer, rubric or scoring policy writes `question.rubric_update`.
 - Only the instructor actions in the review inbox clear the sidebar badge cache. Changes made by jobs show up within 30 seconds.
+
+**D-026 — Assignment details** · 2026-10-05
+
+- Routes use `{assignment}`, bound explicitly in `AppServiceProvider` (scoped to the course slug in the URL, assignments only). Laravel passes already-bound models to controllers by position, so the quiz controllers for access, status and results release serve assignments too, with no duplicate controllers. The quiz Access page became `components/assessments/AccessPanel.vue`, shared by both.
+- The assignment tabs are Settings, Rules, Access and Submissions. Release controls live on Submissions.
+- Rules can be edited at any time. Saving doesn't regrade by itself. A rule with graded results can't be deleted.
+- `submissions.ai_flags` (json) was added for `ProjectGrader` flags.
+- An assignment is always reachable by its code once published, even after the deadline. The page explains whether the student can still submit, and shows their history and results link. A resubmission after the deadline needs a `late_override = allow`.
+- Changing the deadline or late policy recalculates every current submission's lateness, penalty and score (`RecalculateLatePenalty`). So do participant overrides.
+- `GitHubClient` got all its methods in M09: `repository`, `headCommit`, `tree`, `commits` and `fileContent` (streamed and capped).
+- A participant's fixed `penalty_override` applies only to **late** submissions (the feature doc's "only when late" wins over M09.4's ordering). Waiving still beats the override.
+- Submitting calls GitHub with a short timeout (8s, no retries) through `GitHubClient::quick()`, so the student gets a clear message instead of a timeout. Lateness uses the moment the student pressed submit. Grading jobs keep 15s with 3 tries. An empty repository (409) gets its own message.
+- A student who has submitted can't be removed from an assignment, because the cascade would delete their submissions.

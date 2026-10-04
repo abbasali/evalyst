@@ -11,6 +11,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
+/**
+ * Publish, unpublish, archive and unarchive. Also serves assignments (see the `assignment` binding).
+ */
 class QuizStatusController extends Controller
 {
     public function publish(Team $currentTeam, Assessment $quiz, PublishAssessment $publish): RedirectResponse
@@ -19,7 +22,7 @@ class QuizStatusController extends Controller
 
         $publish->handle($quiz);
 
-        return $this->done(__('Quiz published.'));
+        return $this->done(__(':Noun published.', ['noun' => $quiz->noun()]));
     }
 
     public function unpublish(Team $currentTeam, Assessment $quiz): RedirectResponse
@@ -28,7 +31,7 @@ class QuizStatusController extends Controller
 
         $quiz->update(['status' => AssessmentStatus::Draft]);
 
-        return $this->done(__('Quiz moved back to draft.'));
+        return $this->done(__(':Noun moved back to draft.', ['noun' => $quiz->noun()]));
     }
 
     public function archive(Team $currentTeam, Assessment $quiz): RedirectResponse
@@ -37,7 +40,7 @@ class QuizStatusController extends Controller
 
         $quiz->update(['status' => AssessmentStatus::Archived]);
 
-        return $this->done(__('Quiz archived.'));
+        return $this->done(__(':Noun archived.', ['noun' => $quiz->noun()]));
     }
 
     public function unarchive(Team $currentTeam, Assessment $quiz): RedirectResponse
@@ -46,7 +49,7 @@ class QuizStatusController extends Controller
 
         $quiz->update(['status' => AssessmentStatus::Published]);
 
-        return $this->done(__('Quiz restored from the archive.'));
+        return $this->done(__(':Noun restored from the archive.', ['noun' => $quiz->noun()]));
     }
 
     private function done(string $message): RedirectResponse
