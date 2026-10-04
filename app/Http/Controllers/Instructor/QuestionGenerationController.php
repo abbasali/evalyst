@@ -40,7 +40,7 @@ class QuestionGenerationController extends Controller
                     'id' => $generation->id,
                     'prompt' => Str::limit($generation->prompt, 90),
                     'requested' => $generation->requestedTotal(),
-                    'generated' => count($generation->drafts ?? []),
+                    'generated' => $generation->status === GenerationStatus::Completed ? count($generation->drafts ?? []) : 0,
                     'accepted' => $generation->accepted_count,
                     'status' => $generation->status->value,
                     'cost_usd' => round((float) $generation->getAttribute('cost_usd'), 4),
@@ -85,7 +85,8 @@ class QuestionGenerationController extends Controller
                 'tags' => Tag::whereKey($generation->tag_ids ?? [])->pluck('name'),
                 'created_at' => $generation->created_at?->toISOString(),
             ],
-            'drafts' => collect($generation->drafts ?? [])->map(fn (array $draft) => [
+            // While running, `drafts` holds an unverified checkpoint without uids; only show finished drafts.
+            'drafts' => collect($generation->status === GenerationStatus::Completed ? $generation->drafts ?? [] : [])->map(fn (array $draft) => [
                 ...AcceptGeneratedQuestions::toFormFields($draft),
                 'is_code_output' => $draft['is_code_output'] ?? false,
                 'verification' => $draft['verification'] ?? ['status' => 'not_applicable'],

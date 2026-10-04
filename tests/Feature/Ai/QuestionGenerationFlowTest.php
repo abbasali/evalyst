@@ -176,3 +176,15 @@ test('stuck generations can be retried and do not block new ones', function () {
     $this->post(route('question-generations.store', $team), generationPayload())->assertSessionHasNoErrors();
     $this->post(route('question-generations.retry', [$team, $stuck->first()]))->assertRedirect();
 });
+
+test('a running generation with checkpointed drafts can be viewed', function () {
+    [, $team] = actingAsInstructor();
+    $generation = completedGeneration($team);
+    $generation->update(['status' => GenerationStatus::Running, 'drafts' => [['type' => 'single_choice', 'body' => 'Unverified']]]);
+
+    $this->get(route('question-generations.show', [$team, $generation]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('generation.status', 'running')->has('drafts', 0));
+
+    $this->get(route('question-generations.create', $team))->assertOk();
+});
