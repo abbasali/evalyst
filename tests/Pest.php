@@ -3,16 +3,23 @@
 use App\Actions\Attempts\StartAttempt;
 use App\Enums\AnswerGradingStatus;
 use App\Enums\AttemptStatus;
+use App\Enums\AutomatedCheck;
+use App\Enums\LatePolicy;
+use App\Enums\PenaltyType;
 use App\Enums\TeamRole;
 use App\Http\Middleware\EnsureStudentSession;
 use App\Models\Answer;
 use App\Models\Assessment;
+use App\Models\AssignmentRule;
 use App\Models\Attempt;
 use App\Models\Participant;
 use App\Models\Question;
+use App\Models\Submission;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /*
@@ -159,4 +166,35 @@ function attemptNeedingReview(array $quizAttributes = [], array $answer = []): A
     $attempt->update(['status' => 'grading']);
 
     return $attempt->refresh();
+}
+
+/**
+ * Fake GitHub for the student/blog repository: tree, commits and raw files.
+ */
+function fakeRepository(): void
+{
+    Http::preventStrayRequests();
+    Http::fake([
+        'api.github.com/repos/student/blog/git/trees/*' => Http::response(json_decode((string) file_get_contents(base_path('tests/Fixtures/github/tree-laravel-app.json')), true)),
+        'api.github.com/repos/student/blog/commits*' => Http::response(json_decode((string) file_get_contents(base_path('tests/Fixtures/github/commits.json')), true)),
+        'raw.githubusercontent.com/*' => fn (Request $request) => Http::response('<?php // '.basename($request->url())),
+    ]);
+}
+
+/**
+ * A late submission (1 day, 2 marks/day) for an assignment with one automated and one AI rule.
+ *
+ * @return array{0: Submission, 1: AssignmentRule}
+ */
+function gradableSubmission(array $submission = []): array
+{
+    $assignment = Assessment::factory()->assignment()->published()->create([
+        'closes_at' => now()->subDays(2),
+        'late_policy' => LatePolicy::Penalty, 'penalty_type' => PenaltyType::PerDay, 'penalty_value' => 2,
+    ]);
+    AssignmentRule::factory()->automated(AutomatedCheck::PathAbsent, ['glob' => 'vendor/**'])->for($assignment, 'assessment')->create(['marks' => 2, 'position' => 1]);
+    $ai = AssignmentRule::factory()->ai()->for($assignment, 'assessment')->create(['marks' => 8, 'position' => 2]);
+    $participant = Participant::factory()->for($assignment)->create();
+
+    return [Submission::factory()->for($participant)->create(['submitted_at' => now()->subDay(), 'max_score' => 10, ...$submission]), $ai];
 }

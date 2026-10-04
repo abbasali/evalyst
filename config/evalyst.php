@@ -56,6 +56,8 @@ return [
                 '*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'bun.lockb',
                 '*.min.js', '*.min.css', '*.map', '.env', '.env.*', '*.log',
                 '*.sqlite', '*.sqlite3', '.DS_Store', '*.phar',
+                // Secrets that should never reach the AI.
+                '*.pem', '*.key', '*.p12', '*.pfx', 'id_rsa*', 'id_ed25519*', 'auth.json', '.npmrc', '.pypirc',
             ],
             'files_allowed' => ['.env.example'],
             'extensions' => [
@@ -66,11 +68,6 @@ return [
                 'pdf', 'exe', 'dll', 'so', 'dylib', 'bin',
             ],
         ],
-    ],
-
-    'assignments' => [
-        // Temporary guard: submissions are not graded until M10 lands.
-        'auto_grade' => (bool) env('EVALYST_ASSIGNMENTS_AUTO_GRADE', false),
     ],
 
     'quiz' => [

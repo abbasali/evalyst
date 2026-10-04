@@ -7,6 +7,7 @@ use App\Enums\LateOverride;
 use App\Grading\LatePenaltyCalculator;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Student\Concerns\ResolvesParticipant;
+use App\Jobs\GradeSubmission;
 use App\Models\Assessment;
 use App\Models\AssignmentRule;
 use App\Models\Submission;
@@ -73,6 +74,8 @@ class AssignmentController extends Controller
         $request->validate(['repo_url' => ['required', 'string', 'max:300']]);
 
         $submission = $submit->handle($this->participant($request), $request->string('repo_url')->value());
+
+        GradeSubmission::dispatch($submission->id);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $submission->minutes_late > 0
             ? __('Submitted (late). We recorded commit :sha.', ['sha' => $submission->shortSha()])

@@ -6,11 +6,13 @@ use App\Actions\Grading\PublishGrade;
 use App\Actions\Grading\RegradeAnswers;
 use App\Enums\AnswerGradingStatus;
 use App\Enums\AttemptEventType;
+use App\Enums\SubmissionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Instructor\GradeRequest;
 use App\Models\Answer;
 use App\Models\Assessment;
 use App\Models\AssessmentQuestion;
+use App\Models\Submission;
 use App\Models\Team;
 use App\Queries\ReviewInboxQuery;
 use App\Support\AnswerPresenter;
@@ -34,16 +36,27 @@ class ReviewController extends Controller
         $inbox = new ReviewInboxQuery($currentTeam, $filters);
         $all = (new ReviewInboxQuery($currentTeam))->answers()->reorder();
 
+        $allSubmissions = (new ReviewInboxQuery($currentTeam))->submissions()->reorder();
         $assessmentIds = $all->clone()->join('attempts', 'attempts.id', '=', 'answers.attempt_id')
             ->join('participants', 'participants.id', '=', 'attempts.participant_id')
-            ->distinct()->pluck('participants.assessment_id');
+            ->distinct()->pluck('participants.assessment_id')
+            ->merge($allSubmissions->clone()->join('participants', 'participants.id', '=', 'submissions.participant_id')->distinct()->pluck('participants.assessment_id'))
+            ->unique();
 
         return Inertia::render('review/Index', [
             'rows' => $inbox->rows()->paginate(25)->withQueryString()->through(fn (Answer $answer) => ReviewInboxQuery::row($answer)),
             'filters' => $filters,
+            'submissionsTotal' => $inbox->submissions()->count(),
+            'submissions' => $inbox->submissions()
+                ->with(['participant.student:id,name,roll_number', 'participant.assessment:id,title'])
+                ->limit(100)
+                ->get()
+                ->map(fn (Submission $submission) => ReviewInboxQuery::submissionRow($submission)),
             'counts' => [
-                'needs_review' => $all->clone()->where('answers.grading_status', AnswerGradingStatus::NeedsReview)->count(),
-                'failed' => $all->clone()->where('answers.grading_status', AnswerGradingStatus::Failed)->count(),
+                'needs_review' => $all->clone()->where('answers.grading_status', AnswerGradingStatus::NeedsReview)->count()
+                    + $allSubmissions->clone()->where('submissions.status', SubmissionStatus::NeedsReview)->count(),
+                'failed' => $all->clone()->where('answers.grading_status', AnswerGradingStatus::Failed)->count()
+                    + $allSubmissions->clone()->where('submissions.status', SubmissionStatus::Failed)->count(),
             ],
             'assessments' => $currentTeam->assessments()->whereIn('id', $assessmentIds)->orderBy('title')->get(['id', 'title']),
             'questions' => isset($filters['assessment'])

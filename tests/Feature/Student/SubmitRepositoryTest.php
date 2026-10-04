@@ -2,11 +2,13 @@
 
 use App\Enums\LatePolicy;
 use App\Enums\PenaltyType;
+use App\Jobs\GradeSubmission;
 use App\Models\Assessment;
 use App\Models\AssignmentRule;
 use App\Models\Participant;
 use App\Models\Submission;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 
 function openAssignment(array $attributes = []): Participant
 {
@@ -22,6 +24,7 @@ function openAssignment(array $attributes = []): Participant
 
 function fakeGitHub(string $repository = 'repository-public'): void
 {
+    Queue::fake();
     Http::preventStrayRequests();
     Http::fake([
         'api.github.com/repos/student/blog' => Http::response(json_decode((string) file_get_contents(base_path("tests/Fixtures/github/{$repository}.json")), true)),
@@ -43,6 +46,7 @@ test('an on-time submission records the head commit', function () {
     submitRepo($participant)->assertSessionHasNoErrors();
 
     $submission = Submission::sole();
+    Queue::assertPushed(GradeSubmission::class, fn ($job) => $job->submissionId === $submission->id);
     expect($submission->commit_sha)->toBe('4f2c1a9e8b7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b')
         ->and($submission->repo_url)->toBe('https://github.com/student/blog')
         ->and($submission->minutes_late)->toBe(0)

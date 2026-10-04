@@ -236,6 +236,13 @@ class Assessment extends Model
             return false;
         }
 
+        // Assignments wait for the latest personal deadline too.
+        if ($this->isAssignment()) {
+            $latest = $this->participants()->max('deadline_override_at');
+
+            return $latest === null || now()->gte($latest);
+        }
+
         return ! $this->attempts()->where('attempts.status', AttemptStatus::InProgress)->exists();
     }
 

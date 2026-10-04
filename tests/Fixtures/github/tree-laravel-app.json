@@ -1,0 +1,85 @@
+{
+    "sha": "4f2c1a9e8b7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b",
+    "truncated": false,
+    "tree": [
+        {
+            "path": "README.md",
+            "type": "blob",
+            "size": 400
+        },
+        {
+            "path": "composer.json",
+            "type": "blob",
+            "size": 800
+        },
+        {
+            "path": "composer.lock",
+            "type": "blob",
+            "size": 90000
+        },
+        {
+            "path": "app",
+            "type": "tree"
+        },
+        {
+            "path": "app/Http/Controllers/PostController.php",
+            "type": "blob",
+            "size": 1200
+        },
+        {
+            "path": "app/Http/Requests/StorePostRequest.php",
+            "type": "blob",
+            "size": 600
+        },
+        {
+            "path": "routes/web.php",
+            "type": "blob",
+            "size": 300
+        },
+        {
+            "path": "tests/Feature/PostTest.php",
+            "type": "blob",
+            "size": 900
+        },
+        {
+            "path": "vendor/autoload.php",
+            "type": "blob",
+            "size": 700
+        },
+        {
+            "path": "vendor/laravel/framework/src/Foundation/Application.php",
+            "type": "blob",
+            "size": 50000
+        },
+        {
+            "path": "node_modules/vue/index.js",
+            "type": "blob",
+            "size": 300
+        },
+        {
+            "path": "public/logo.png",
+            "type": "blob",
+            "size": 5000
+        },
+        {
+            "path": "storage/big-export.json",
+            "type": "blob",
+            "size": 200000
+        },
+        {
+            "path": "database/big-seed.sql",
+            "type": "blob",
+            "size": 200000
+        },
+        {
+            "path": ".env",
+            "type": "blob",
+            "size": 100
+        },
+        {
+            "path": ".env.example",
+            "type": "blob",
+            "size": 100
+        }
+    ]
+}
