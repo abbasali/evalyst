@@ -16,10 +16,19 @@ import { marks, reasonLabel } from '@/lib/grading';
 import { cn } from '@/lib/utils';
 import { bulkAccept, index } from '@/routes/review';
 import { show } from '@/routes/review/answers';
-import type { Paginated, ReviewFilters, ReviewRow, Team } from '@/types';
+import { show as showSubmission } from '@/routes/review/submissions';
+import type {
+    Paginated,
+    ReviewFilters,
+    ReviewRow,
+    SubmissionReviewRow,
+    Team,
+} from '@/types';
 
 const props = defineProps<{
     rows: Paginated<ReviewRow>;
+    submissions: SubmissionReviewRow[];
+    submissionsTotal: number;
     filters: ReviewFilters;
     counts: { needs_review: number; failed: number };
     assessments: { id: number; title: string }[];
@@ -272,146 +281,251 @@ function waitingFor(iso: string | null): string {
                 </div>
             </div>
 
-            <div
-                v-if="selected.length"
-                class="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 px-4 py-2 text-sm"
-            >
-                <span>{{ selected.length }} selected</span>
-                <Button size="sm" :disabled="accepting" @click="acceptSelected">
-                    <Spinner v-if="accepting" />
-                    <CheckCheck v-else /> Accept AI grades
-                </Button>
-            </div>
-
-            <div class="overflow-x-auto rounded-xl border">
-                <table class="w-full text-sm">
-                    <thead
-                        class="border-b bg-muted/50 text-left text-xs text-muted-foreground"
-                    >
-                        <tr>
-                            <th class="w-10 px-4 py-3">
-                                <Checkbox
-                                    :model-value="allSelected"
-                                    :disabled="acceptable.length === 0"
-                                    aria-label="Select all with an AI grade"
-                                    @update:model-value="toggleAll"
-                                />
-                            </th>
-                            <th class="px-2 py-3 font-medium">Student</th>
-                            <th class="px-4 py-3 font-medium">Question</th>
-                            <th class="px-4 py-3 text-right font-medium">
-                                AI score
-                            </th>
-                            <th
-                                class="hidden px-4 py-3 font-medium md:table-cell"
+            <section v-if="submissions.length" class="space-y-2">
+                <h2 class="text-sm font-medium">
+                    Assignment submissions
+                    <span class="text-muted-foreground">
+                        ({{ submissionsTotal
+                        }}<template v-if="submissionsTotal > submissions.length"
+                            >, oldest {{ submissions.length }} shown</template
+                        >)
+                    </span>
+                </h2>
+                <div class="overflow-x-auto rounded-xl border">
+                    <table class="w-full text-sm">
+                        <tbody class="divide-y">
+                            <tr
+                                v-for="row in submissions"
+                                :key="row.id"
+                                class="transition-colors hover:bg-muted/30"
                             >
-                                Why
-                            </th>
-                            <th
-                                class="hidden px-4 py-3 text-right font-medium sm:table-cell"
-                            >
-                                Waiting
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        <tr
-                            v-for="row in rows.data"
-                            :key="row.id"
-                            class="transition-colors hover:bg-muted/30"
-                        >
-                            <td class="px-4 py-3">
-                                <Checkbox
-                                    :model-value="selected.includes(row.id)"
-                                    :disabled="
-                                        row.status !== 'needs_review' ||
-                                        row.ai_score === null
-                                    "
-                                    :aria-label="`Select ${row.student.name}`"
-                                    @update:model-value="toggle(row.id, $event)"
-                                />
-                            </td>
-                            <td class="px-2 py-3">
-                                <Link
-                                    :href="detailUrl(row)"
-                                    class="font-medium hover:underline"
-                                >
-                                    {{ row.student.name }}
-                                </Link>
-                                <div
-                                    class="font-mono text-xs text-muted-foreground"
-                                >
-                                    {{ row.student.roll_number }}
-                                </div>
-                            </td>
-                            <td class="max-w-md px-4 py-3">
-                                <Link :href="detailUrl(row)" class="block">
-                                    <span class="text-xs text-muted-foreground">
-                                        {{ row.assessment.title }} · Q{{
-                                            row.question.position
-                                        }}
-                                    </span>
-                                    <span class="line-clamp-1">
-                                        {{ row.question.excerpt }}
-                                    </span>
-                                </Link>
-                            </td>
-                            <td class="px-4 py-3 text-right whitespace-nowrap">
-                                <template v-if="row.ai_score !== null">
-                                    <span class="font-medium tabular-nums">
-                                        {{ marks(row.ai_score) }}
-                                    </span>
-                                    <span class="text-muted-foreground">
-                                        / {{ marks(row.max_score) }}
-                                    </span>
-                                    <div
-                                        v-if="row.confidence !== null"
-                                        class="text-xs text-muted-foreground"
-                                    >
-                                        {{ Math.round(row.confidence * 100) }}%
-                                        sure
-                                    </div>
-                                </template>
-                                <span v-else class="text-muted-foreground"
-                                    >—</span
-                                >
-                            </td>
-                            <td class="hidden px-4 py-3 md:table-cell">
-                                <div class="flex flex-wrap gap-1">
-                                    <Badge
-                                        v-for="reason in row.reasons"
-                                        :key="reason"
-                                        :variant="
-                                            reason === 'failed' ||
-                                            reason === 'flag:prompt_injection'
-                                                ? 'destructive'
-                                                : 'warning'
+                                <td class="px-4 py-3">
+                                    <Link
+                                        :href="
+                                            showSubmission.url([slug, row.id], {
+                                                query: { ...filters },
+                                            })
                                         "
+                                        class="font-medium hover:underline"
                                     >
-                                        {{ reasonLabel(reason) }}
-                                    </Badge>
-                                </div>
-                            </td>
-                            <td
-                                class="hidden px-4 py-3 text-right text-muted-foreground tabular-nums sm:table-cell"
-                            >
-                                {{ waitingFor(row.waiting_since) }}
-                            </td>
-                        </tr>
-                        <tr v-if="rows.data.length === 0">
-                            <td
-                                colspan="6"
-                                class="px-4 py-10 text-center text-muted-foreground"
-                            >
-                                <Inbox class="mx-auto mb-2 size-5" />
-                                Nothing matches these filters.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                        {{ row.student.name }}
+                                    </Link>
+                                    <div
+                                        class="font-mono text-xs text-muted-foreground"
+                                    >
+                                        {{ row.student.roll_number }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="text-xs text-muted-foreground">
+                                        {{ row.assessment.title }}
+                                    </span>
+                                    <div class="font-mono text-xs">
+                                        {{ row.repo }}
+                                    </div>
+                                </td>
+                                <td
+                                    class="px-4 py-3 text-right whitespace-nowrap tabular-nums"
+                                >
+                                    <template v-if="row.score !== null">
+                                        <span class="font-medium">
+                                            {{ marks(row.score) }}
+                                        </span>
+                                        <span class="text-muted-foreground">
+                                            / {{ marks(row.max_score) }}
+                                        </span>
+                                    </template>
+                                    <span v-else class="text-muted-foreground">
+                                        —
+                                    </span>
+                                </td>
+                                <td class="hidden px-4 py-3 md:table-cell">
+                                    <div class="flex flex-wrap gap-1">
+                                        <Badge
+                                            v-for="reason in row.reasons"
+                                            :key="reason"
+                                            :variant="
+                                                reason === 'failed' ||
+                                                reason ===
+                                                    'flag:prompt_injection'
+                                                    ? 'destructive'
+                                                    : 'warning'
+                                            "
+                                        >
+                                            {{ reasonLabel(reason) }}
+                                        </Badge>
+                                    </div>
+                                </td>
+                                <td
+                                    class="hidden px-4 py-3 text-right text-muted-foreground tabular-nums sm:table-cell"
+                                >
+                                    {{ waitingFor(row.waiting_since) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h2 v-if="rows.data.length" class="pt-2 text-sm font-medium">
+                    Quiz answers
+                </h2>
+            </section>
 
-            <Pagination :paginator="rows" noun="items" />
+            <template v-if="rows.data.length || submissions.length === 0">
+                <div
+                    v-if="selected.length"
+                    class="flex items-center justify-between gap-3 rounded-lg border bg-muted/40 px-4 py-2 text-sm"
+                >
+                    <span>{{ selected.length }} selected</span>
+                    <Button
+                        size="sm"
+                        :disabled="accepting"
+                        @click="acceptSelected"
+                    >
+                        <Spinner v-if="accepting" />
+                        <CheckCheck v-else /> Accept AI grades
+                    </Button>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border">
+                    <table class="w-full text-sm">
+                        <thead
+                            class="border-b bg-muted/50 text-left text-xs text-muted-foreground"
+                        >
+                            <tr>
+                                <th class="w-10 px-4 py-3">
+                                    <Checkbox
+                                        :model-value="allSelected"
+                                        :disabled="acceptable.length === 0"
+                                        aria-label="Select all with an AI grade"
+                                        @update:model-value="toggleAll"
+                                    />
+                                </th>
+                                <th class="px-2 py-3 font-medium">Student</th>
+                                <th class="px-4 py-3 font-medium">Question</th>
+                                <th class="px-4 py-3 text-right font-medium">
+                                    AI score
+                                </th>
+                                <th
+                                    class="hidden px-4 py-3 font-medium md:table-cell"
+                                >
+                                    Why
+                                </th>
+                                <th
+                                    class="hidden px-4 py-3 text-right font-medium sm:table-cell"
+                                >
+                                    Waiting
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            <tr
+                                v-for="row in rows.data"
+                                :key="row.id"
+                                class="transition-colors hover:bg-muted/30"
+                            >
+                                <td class="px-4 py-3">
+                                    <Checkbox
+                                        :model-value="selected.includes(row.id)"
+                                        :disabled="
+                                            row.status !== 'needs_review' ||
+                                            row.ai_score === null
+                                        "
+                                        :aria-label="`Select ${row.student.name}`"
+                                        @update:model-value="
+                                            toggle(row.id, $event)
+                                        "
+                                    />
+                                </td>
+                                <td class="px-2 py-3">
+                                    <Link
+                                        :href="detailUrl(row)"
+                                        class="font-medium hover:underline"
+                                    >
+                                        {{ row.student.name }}
+                                    </Link>
+                                    <div
+                                        class="font-mono text-xs text-muted-foreground"
+                                    >
+                                        {{ row.student.roll_number }}
+                                    </div>
+                                </td>
+                                <td class="max-w-md px-4 py-3">
+                                    <Link :href="detailUrl(row)" class="block">
+                                        <span
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            {{ row.assessment.title }} · Q{{
+                                                row.question.position
+                                            }}
+                                        </span>
+                                        <span class="line-clamp-1">
+                                            {{ row.question.excerpt }}
+                                        </span>
+                                    </Link>
+                                </td>
+                                <td
+                                    class="px-4 py-3 text-right whitespace-nowrap"
+                                >
+                                    <template v-if="row.ai_score !== null">
+                                        <span class="font-medium tabular-nums">
+                                            {{ marks(row.ai_score) }}
+                                        </span>
+                                        <span class="text-muted-foreground">
+                                            / {{ marks(row.max_score) }}
+                                        </span>
+                                        <div
+                                            v-if="row.confidence !== null"
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            {{
+                                                Math.round(
+                                                    row.confidence * 100,
+                                                )
+                                            }}% sure
+                                        </div>
+                                    </template>
+                                    <span v-else class="text-muted-foreground"
+                                        >—</span
+                                    >
+                                </td>
+                                <td class="hidden px-4 py-3 md:table-cell">
+                                    <div class="flex flex-wrap gap-1">
+                                        <Badge
+                                            v-for="reason in row.reasons"
+                                            :key="reason"
+                                            :variant="
+                                                reason === 'failed' ||
+                                                reason ===
+                                                    'flag:prompt_injection'
+                                                    ? 'destructive'
+                                                    : 'warning'
+                                            "
+                                        >
+                                            {{ reasonLabel(reason) }}
+                                        </Badge>
+                                    </div>
+                                </td>
+                                <td
+                                    class="hidden px-4 py-3 text-right text-muted-foreground tabular-nums sm:table-cell"
+                                >
+                                    {{ waitingFor(row.waiting_since) }}
+                                </td>
+                            </tr>
+                            <tr v-if="rows.data.length === 0">
+                                <td
+                                    colspan="6"
+                                    class="px-4 py-10 text-center text-muted-foreground"
+                                >
+                                    <Inbox class="mx-auto mb-2 size-5" />
+                                    Nothing matches these filters.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <Pagination :paginator="rows" noun="items" />
+            </template>
         </template>
     </div>
 </template>

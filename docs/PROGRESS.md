@@ -115,13 +115,13 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress / partially done (explain 
 
 ## M10 — Assignment grading → [milestones/M10-assignment-grading.md](milestones/M10-assignment-grading.md)
 
-- [ ] **M10.1** `GitHubClient` tree/commits/fileContent (streamed) + rate-limit handling
-- [ ] **M10.2** `PathFilter` + `RepositoryIngestor` → `RepoSnapshot` + manifest
-- [ ] **M10.3** Automated checks (6 types)
-- [ ] **M10.4** `ProjectGrader` agent + prompt + validation
-- [ ] **M10.5** `GradeSubmission` job pipeline (ingest → checks → AI → penalty → PublishGate)
-- [ ] **M10.6** Submission review in the inbox: rule-by-rule override, regrade
-- [ ] **M10.7** Student assignment results view
+- [x] **M10.1** `GitHubClient` tree/commits/fileContent (streamed) + rate-limit handling — methods landed in M09; tests here
+- [x] **M10.2** `PathFilter` + `RepositoryIngestor` → `RepoSnapshot` + manifest
+- [x] **M10.3** Automated checks (6 types)
+- [x] **M10.4** `ProjectGrader` agent + prompt + validation
+- [x] **M10.5** `GradeSubmission` job pipeline (ingest → checks → AI → penalty → PublishGate)
+- [x] **M10.6** Submission review in the inbox: rule-by-rule override, regrade — submissions get their own section above quiz answers; regrade hides the published grade until settled (D-027)
+- [x] **M10.7** Student assignment results view
 
 ## M11 — Dashboard, analytics & exports → [milestones/M11-analytics-and-polish.md](milestones/M11-analytics-and-polish.md)
 

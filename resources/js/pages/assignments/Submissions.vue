@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
     Eye,
     EyeOff,
     GitCommitHorizontal,
+    RotateCcw,
     Send,
     SlidersHorizontal,
     Users,
@@ -26,6 +27,8 @@ import {
     release as releaseRoute,
     unrelease,
 } from '@/routes/assignments/results';
+import { regrade as regradeAll } from '@/routes/assignments/submissions';
+import { show as reviewSubmission } from '@/routes/review/submissions';
 import type {
     AssignmentShellProps,
     Option,
@@ -135,6 +138,23 @@ const stats = computed(() => [
     { label: 'Graded', value: props.summary.graded },
 ]);
 
+const regradeOpen = ref(false);
+
+function confirmRegradeAll() {
+    router.post(
+        regradeAll.url(args.value),
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (processing.value = true),
+            onFinish: () => {
+                processing.value = false;
+                regradeOpen.value = false;
+            },
+        },
+    );
+}
+
 const confirmOpen = ref(false);
 const processing = ref(false);
 
@@ -215,13 +235,22 @@ function toggleRelease() {
                 </Button>
             </div>
 
-            <NativeSelect v-model="filter" class="w-48">
-                <option value="">Everyone</option>
-                <option value="submitted">Submitted</option>
-                <option value="late">Late only</option>
-                <option value="missing">Not submitted</option>
-                <option value="needs_review">Needs review</option>
-            </NativeSelect>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <NativeSelect v-model="filter" class="w-48">
+                    <option value="">Everyone</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="late">Late only</option>
+                    <option value="missing">Not submitted</option>
+                    <option value="needs_review">Needs review</option>
+                </NativeSelect>
+                <Button
+                    v-if="summary.submitted > 0 && assignment.can.update"
+                    variant="outline"
+                    @click="regradeOpen = true"
+                >
+                    <RotateCcw /> Regrade all
+                </Button>
+            </div>
 
             <div class="overflow-x-auto rounded-xl border">
                 <table class="w-full text-sm">
@@ -247,7 +276,21 @@ function toggleRelease() {
                             class="transition-colors hover:bg-muted/30"
                         >
                             <td class="px-4 py-3">
-                                <span class="font-medium">{{ row.name }}</span>
+                                <Link
+                                    v-if="row.submission"
+                                    :href="
+                                        reviewSubmission([
+                                            slug,
+                                            row.submission.id,
+                                        ])
+                                    "
+                                    class="font-medium hover:underline"
+                                >
+                                    {{ row.name }}
+                                </Link>
+                                <span v-else class="font-medium">{{
+                                    row.name
+                                }}</span>
                                 <div
                                     class="font-mono text-xs text-muted-foreground"
                                 >
@@ -382,6 +425,14 @@ function toggleRelease() {
             :late-overrides="lateOverrides"
         />
 
+        <ConfirmDialog
+            v-model:open="regradeOpen"
+            title="Regrade every submission?"
+            description="Use this after changing the rules. Each current submission is graded again at its submitted commit (AI rules cost a little each). Grades are hidden from students until they're settled again."
+            confirm-label="Regrade all"
+            :processing="processing"
+            @confirm="confirmRegradeAll"
+        />
         <ConfirmDialog
             v-model:open="confirmOpen"
             :title="release.released ? 'Hide results?' : 'Release results?'"

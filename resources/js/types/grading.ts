@@ -84,3 +84,16 @@ export type ReviewFilters = {
     reason?: string;
     group?: string;
 };
+
+export type SubmissionReviewRow = {
+    kind: 'submission';
+    id: number;
+    assessment: { id: number; title: string };
+    student: { name: string; roll_number: string };
+    repo: string;
+    status: 'needs_review' | 'failed';
+    score: number | null;
+    max_score: number;
+    reasons: string[];
+    waiting_since: string | null;
+};

@@ -146,3 +146,16 @@ The instructor picked these from a list of options:
 - A participant's fixed `penalty_override` applies only to **late** submissions (the feature doc's "only when late" wins over M09.4's ordering). Waiving still beats the override.
 - Submitting calls GitHub with a short timeout (8s, no retries) through `GitHubClient::quick()`, so the student gets a clear message instead of a timeout. Lateness uses the moment the student pressed submit. Grading jobs keep 15s with 3 tries. An empty repository (409) gets its own message.
 - A student who has submitted can't be removed from an assignment, because the cascade would delete their submissions.
+
+**D-027 — Assignment grading details** · 2026-10-05
+
+- `GradeSubmission` uses the same retry pattern as D-024: `maxExceptions = 3`, `retryUntil` 6h, timeout 300s. `ProjectGrader` times out at 240s. A GitHub rate limit `release()`s the job until the reset time. A repo that has since become private or been deleted fails with a clear message. Invalid AI output (a missing, unknown or duplicate rule id, or a score out of range) marks the submission `failed` straight away.
+- The token budget is counted from the tree's blob sizes (`ceil(bytes/4)`), so files are skipped **before** they are downloaded. Smaller files that come later can still fit after a big one is skipped.
+- `max_score` is recalculated from the rules when grading, because rules stay editable after submission.
+- Regrading a submission (one, or "Regrade all") clears `published_at`. The student sees "Under review" until the new grade is settled, which avoids showing new per-rule reasoning next to an old total. Quiz answers keep their old published score instead (D-025).
+- The review inbox lists submissions in their own section above quiz answers, instead of merging both into one paginated list.
+- In automatic release mode, assignment results wait for the latest participant deadline override.
+- Each grading run first deletes the submission's old rule results. A failed run can't leave old AI scores next to new automated ones, and a failed submission can't be published until grading succeeds.
+- The review form sends only the rule scores the instructor changed. AI and partial automated scores don't need to be in 0.5 steps. Publishing checks scores against the rules' **current** marks, and recalculates `max_score`.
+- `ProjectGrader` puts everything from the repository (commit messages, paths and files) in one `<repository>` block. Messages and paths are collapsed to a single line.
+- `PathFilter` matches ignore patterns case-insensitively. A trailing `/` or a plain folder name in the extra ignore paths covers the whole folder. Common secret files (`*.pem`, `*.key`, `id_rsa*`, `auth.json`, `.npmrc`) are never fetched.

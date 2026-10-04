@@ -17,6 +17,7 @@ use App\Http\Controllers\Instructor\QuizStatusController;
 use App\Http\Controllers\Instructor\ReviewController;
 use App\Http\Controllers\Instructor\StudentController;
 use App\Http\Controllers\Instructor\StudentImportController;
+use App\Http\Controllers\Instructor\SubmissionReviewController;
 use App\Http\Controllers\Instructor\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -97,6 +98,7 @@ Route::prefix('assignments/{assignment}')->name('assignments.')->group(function 
     Route::get('codes.csv', [QuizAccessController::class, 'downloadCodes'])->name('codes.csv');
 
     Route::get('submissions', [AssignmentSubmissionController::class, 'index'])->name('submissions');
+    Route::post('submissions/regrade', [SubmissionReviewController::class, 'regradeAll'])->name('submissions.regrade');
     Route::put('participants/{participant}/overrides', [AssignmentSubmissionController::class, 'overrides'])->name('participants.overrides');
     Route::post('results/release', [QuizResultsController::class, 'release'])->name('results.release');
     Route::post('results/unrelease', [QuizResultsController::class, 'unrelease'])->name('results.unrelease');
@@ -114,4 +116,7 @@ Route::post('review/answers/{answer}/accept', [ReviewController::class, 'accept'
 Route::put('review/answers/{answer}', [ReviewController::class, 'update'])->name('review.answers.update');
 Route::post('review/answers/{answer}/regrade', [ReviewController::class, 'regrade'])->name('review.answers.regrade');
 Route::get('attempts/{attempt}', [AttemptController::class, 'show'])->name('attempts.show');
+Route::get('review/submissions/{submission}', [SubmissionReviewController::class, 'show'])->name('review.submissions.show');
+Route::put('review/submissions/{submission}', [SubmissionReviewController::class, 'update'])->name('review.submissions.update');
+Route::post('review/submissions/{submission}/regrade', [SubmissionReviewController::class, 'regrade'])->name('review.submissions.regrade');
 Route::post('questions/{question}/regrade', [QuestionController::class, 'regrade'])->name('questions.regrade');

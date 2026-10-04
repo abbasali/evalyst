@@ -5,10 +5,13 @@ namespace App\Console\Commands;
 use App\Actions\Grading\RefreshAttemptScore;
 use App\Enums\AnswerGradingStatus;
 use App\Enums\AttemptStatus;
+use App\Enums\SubmissionStatus;
 use App\Jobs\GradeAttempt;
 use App\Jobs\GradeOpenAnswer;
+use App\Jobs\GradeSubmission;
 use App\Models\Answer;
 use App\Models\Attempt;
+use App\Models\Submission;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -24,6 +27,7 @@ class RecoverGrading extends Command
         $staleBefore = now()->subMinutes(self::STALE_MINUTES);
         $answers = 0;
         $attempts = 0;
+        $submissions = 0;
 
         Answer::query()
             ->where('grading_status', AnswerGradingStatus::Pending)
@@ -49,6 +53,19 @@ class RecoverGrading extends Command
                 }
             });
 
+        // Submissions whose GradeSubmission job was lost or died mid-way.
+        Submission::query()
+            ->where('is_current', true)
+            ->whereIn('status', [SubmissionStatus::Submitted, SubmissionStatus::Grading])
+            ->where('updated_at', '<', $staleBefore)
+            ->chunkById(100, function ($stale) use (&$submissions) {
+                foreach ($stale as $submission) {
+                    $submission->touch();
+                    GradeSubmission::dispatch($submission->id);
+                    $submissions++;
+                }
+            });
+
         // Attempts left in `grading` after their last answer was settled (a worker died in between).
         Attempt::query()
             ->where('status', AttemptStatus::Grading)
@@ -61,7 +78,7 @@ class RecoverGrading extends Command
                 }
             });
 
-        $this->info("Re-dispatched {$answers} answer(s) and re-queued {$attempts} attempt(s).");
+        $this->info("Re-dispatched {$answers} answer(s) and {$submissions} submission(s), re-queued {$attempts} attempt(s).");
 
         return self::SUCCESS;
     }

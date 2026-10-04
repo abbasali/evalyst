@@ -3,7 +3,9 @@
 namespace App\Queries;
 
 use App\Enums\AnswerGradingStatus;
+use App\Enums\SubmissionStatus;
 use App\Models\Answer;
+use App\Models\Submission;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
@@ -43,6 +45,49 @@ class ReviewInboxQuery
                 fn (Builder $query) => $query->orderBy('assessment_question_id')->orderBy('answers.id'),
                 fn (Builder $query) => $query->orderBy('answers.updated_at')->orderBy('answers.id'),
             );
+    }
+
+    /**
+     * Current assignment submissions waiting on an instructor.
+     *
+     * @return Builder<Submission>
+     */
+    public function submissions(): Builder
+    {
+        $filters = $this->filters;
+        $status = in_array($filters['status'] ?? null, self::STATUSES, true) ? [$filters['status']] : self::STATUSES;
+
+        return Submission::query()
+            ->forCourse($this->team)
+            ->where('submissions.is_current', true)
+            ->whereIn('submissions.status', $status)
+            ->when($filters['assessment'] ?? null, fn (Builder $query, $id) => $query->whereHas('participant', fn (Builder $query) => $query->where('assessment_id', (int) $id)))
+            ->when($filters['question'] ?? null, fn (Builder $query) => $query->whereRaw('1 = 0'))
+            ->when($filters['reason'] ?? null, fn (Builder $query, string $reason) => $reason === 'failed'
+                ? $query->where('submissions.status', SubmissionStatus::Failed)
+                : $query->whereJsonContains('review_reasons', $reason))
+            ->orderBy('submissions.updated_at');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function submissionRow(Submission $submission): array
+    {
+        $participant = $submission->participant;
+
+        return [
+            'kind' => 'submission',
+            'id' => $submission->id,
+            'assessment' => ['id' => $participant->assessment->id, 'title' => $participant->assessment->title],
+            'student' => ['name' => $participant->student->name, 'roll_number' => $participant->student->roll_number],
+            'repo' => str_replace('https://github.com/', '', $submission->repo_url).'@'.$submission->shortSha(),
+            'status' => $submission->status->value,
+            'score' => $submission->score !== null ? (float) $submission->score : null,
+            'max_score' => (float) $submission->max_score,
+            'reasons' => $submission->status === SubmissionStatus::Failed ? ['failed'] : ($submission->review_reasons ?? []),
+            'waiting_since' => $submission->updated_at?->toIso8601String(),
+        ];
     }
 
     /**
@@ -104,7 +149,11 @@ class ReviewInboxQuery
      */
     public static function count(Team $team): int
     {
-        return Cache::remember(self::countKey($team->id), 30, fn () => (new self($team))->answers()->reorder()->count());
+        return Cache::remember(self::countKey($team->id), 30, function () use ($team) {
+            $inbox = new self($team);
+
+            return $inbox->answers()->reorder()->count() + $inbox->submissions()->reorder()->count();
+        });
     }
 
     public static function forgetCount(int $teamId): void
