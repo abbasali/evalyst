@@ -227,7 +227,8 @@ const releaseChoices = [
                             :disabled="isLocked('duration_minutes')"
                         />
                         <p class="text-xs text-muted-foreground">
-                            Never runs past the closing time.
+                            Students who start just before closing still get the
+                            full time.
                         </p>
                         <InputError :message="errors.duration_minutes" />
                     </div>

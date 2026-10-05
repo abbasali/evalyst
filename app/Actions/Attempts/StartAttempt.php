@@ -52,7 +52,8 @@ class StartAttempt
                 $attempt = $participant->attempt()->create([
                     'status' => AttemptStatus::InProgress,
                     'started_at' => $now,
-                    'deadline_at' => $now->addMinutes((int) $assessment->duration_minutes)->min($assessment->closes_at),
+                    // Closing time is the last moment to start; everyone gets the full duration (D-031).
+                    'deadline_at' => $now->addMinutes((int) $assessment->duration_minutes),
                     'question_order' => $order->pluck('id')->values()->all(),
                     'option_order' => $assessment->shuffle_options ? $this->shuffledOptions($items) : null,
                     'furthest_position' => 1,

@@ -129,7 +129,7 @@ teams (Course) ─┬─< team_members >── users (Instructor)
 | instructions               | longText, nullable              | Markdown shown before starting (quiz) or as the problem statement (assignment)                                                                                                                                                                                                        |
 | status                     | `AssessmentStatus`              |                                                                                                                                                                                                                                                                                       |
 | access_mode                | `AccessMode`                    |                                                                                                                                                                                                                                                                                       |
-| shared_code                | string(12), nullable, unique    | Only for `shared_code` mode. 6 characters, unique across shared and roster codes (D-030).                                                                                                                                                                        |
+| shared_code                | string(12), nullable, unique    | Only for `shared_code` mode. 6 characters, unique across shared and roster codes (D-030).                                                                                                                                                                                             |
 | opens_at                   | datetime, nullable              | null = open as soon as it is published                                                                                                                                                                                                                                                |
 | closes_at                  | datetime                        | Quiz: the last moment an attempt can start. Assignment: the deadline.                                                                                                                                                                                                                 |
 | release_mode               | `ReleaseMode`                   | default `manual`                                                                                                                                                                                                                                                                      |
@@ -188,18 +188,18 @@ Once any submission for the assessment has been graded, rules **cannot be delete
 
 The override columns (`deadline_override_at` … `override_note`) are added in **M09.1**. M05.1 creates the rest.
 
-| Column               | Type                         | Notes                                                                                   |
-| -------------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
-| assessment_id        | FK, cascade                  |                                                                                         |
-| student_id           | FK, cascade                  |                                                                                         |
-| public_id            | ulid, unique                 | Results link token                                                                      |
+| Column               | Type                         | Notes                                                                                           |
+| -------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| assessment_id        | FK, cascade                  |                                                                                                 |
+| student_id           | FK, cascade                  |                                                                                                 |
+| public_id            | ulid, unique                 | Results link token                                                                              |
 | access_code          | string(12), nullable, unique | Roster mode only. Alphabet `ACDEFHJKMNPRTWXY3479` (no look-alikes, D-020), 6 characters (D-030) |
-| deadline_override_at | datetime, nullable           | Assignment: this student's effective deadline                                           |
-| late_override        | `LateOverride`, nullable     |                                                                                         |
-| penalty_waived       | bool, default false          |                                                                                         |
-| penalty_override     | decimal(8,2), nullable       | A fixed penalty that replaces the calculated one                                        |
-| override_note        | text, nullable               |                                                                                         |
-| joined_at            | datetime, nullable           |                                                                                         |
+| deadline_override_at | datetime, nullable           | Assignment: this student's effective deadline                                                   |
+| late_override        | `LateOverride`, nullable     |                                                                                                 |
+| penalty_waived       | bool, default false          |                                                                                                 |
+| penalty_override     | decimal(8,2), nullable       | A fixed penalty that replaces the calculated one                                                |
+| override_note        | text, nullable               |                                                                                                 |
+| joined_at            | datetime, nullable           |                                                                                                 |
 
 Unique: (`assessment_id`, `student_id`).
 
@@ -211,7 +211,7 @@ Unique: (`assessment_id`, `student_id`).
 | public_id             | ulid, unique                    |                                                                                                                                                 |
 | status                | `AttemptStatus`                 |                                                                                                                                                 |
 | started_at            | datetime                        |                                                                                                                                                 |
-| deadline_at           | datetime                        | `min(started_at + duration, closes_at)`                                                                                                         |
+| deadline_at           | datetime                        | `started_at + duration` (closing time is the last moment to start, D-031)                                                                                                         |
 | submitted_at          | datetime, nullable              |                                                                                                                                                 |
 | auto_submitted        | bool, default false             |                                                                                                                                                 |
 | question_order        | json                            | Array of `assessment_question_id`s, fixed at start                                                                                              |

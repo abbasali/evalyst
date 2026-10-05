@@ -19,7 +19,7 @@ function startedAttempt(array $attributes = []): array
     return [$quiz, $participant, $attempt];
 }
 
-it('starts an attempt with a capped deadline, answer rows and a resume cookie', function () {
+it('starts an attempt with the full duration even near closing, answer rows and a resume cookie', function () {
     $this->travelTo('2026-10-10 10:00:00');
     [$quiz, $participant] = openQuizWithParticipant(['duration_minutes' => 60, 'opens_at' => '2026-10-10 09:00:00', 'closes_at' => '2026-10-10 10:30:00']);
     studentSession($participant);
@@ -29,7 +29,7 @@ it('starts an attempt with a capped deadline, answer rows and a resume cookie', 
         ->assertRedirect();
 
     $attempt = $participant->fresh()->attempt;
-    expect($attempt->deadline_at->toDateTimeString())->toBe('2026-10-10 10:30:00')
+    expect($attempt->deadline_at->toDateTimeString())->toBe('2026-10-10 11:00:00')
         ->and($attempt->answers()->count())->toBe(4)
         ->and((float) $attempt->max_score)->toBe(8.0)
         ->and($attempt->question_order)->toBe($quiz->assessmentQuestions()->pluck('id')->all());

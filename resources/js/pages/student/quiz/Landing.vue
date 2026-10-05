@@ -86,7 +86,10 @@ async function begin(action: 'start' | 'resume') {
                     {{ quiz.title }}
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Closes {{ time(quiz.closes_at) }}
+                    Start by {{ time(quiz.closes_at) }}
+                    <template v-if="quiz.duration_minutes">
+                        · you get the full {{ quiz.duration_minutes }} minutes
+                    </template>
                 </p>
             </div>
 
