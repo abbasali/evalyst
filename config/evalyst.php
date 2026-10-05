@@ -26,6 +26,9 @@ return [
         'max_generation_questions' => 30,
         'max_concurrent_generations' => 3,
         'rate_limit_per_minute' => (int) env('EVALYST_AI_RATE_LIMIT', 60),
+
+        // Queue for every AI job. Set it to "default" to run everything on one queue.
+        'queue' => env('EVALYST_AI_QUEUE') ?: 'ai',
     ],
 
     /*

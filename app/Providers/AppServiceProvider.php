@@ -57,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * `composer dev` must also work the `ai` queue (AI jobs never run on `default`).
+     * `composer dev` must also work the AI queue (`evalyst.ai.queue`), when it isn't `default`.
      */
     protected function configureDevCommands(): void
     {
@@ -66,7 +66,8 @@ class AppServiceProvider extends ServiceProvider
         }
 
         DevCommands::except('queue');
-        DevCommands::artisan('queue:listen --queue=ai,default --tries=1 --timeout=0', 'queues');
+        $queues = collect([config('evalyst.ai.queue'), 'default'])->unique()->implode(',');
+        DevCommands::artisan("queue:listen --queue={$queues} --tries=1 --timeout=0", 'queues');
     }
 
     /**

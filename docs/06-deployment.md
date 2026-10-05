@@ -29,10 +29,11 @@ Production runs on **Laravel Cloud**: an app cluster, a MySQL database, **Manage
 
 | Queue     | Jobs                                                      | Suggested concurrency                                                        | Worker timeout                                 |
 | --------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------- |
-| `ai`      | `GenerateQuestions`, `GradeOpenAnswer`, `GradeSubmission` | 2–4 (keeps us under OpenAI limits; the app's `openai` limiter still applies) | **≥ 330s** (`GradeSubmission` timeout is 300s) |
+| `ai`      | `GenerateQuestions`, `GradeOpenAnswer`, `GradeSubmission` | 2–4 (keeps us under OpenAI limits; the app's `openai` limiter still applies) | **≥ 340s** (`GenerateQuestions` timeout is 330s) |
 | `default` | Mail, notifications, misc                                 | 2                                                                            | 90s                                            |
 
-- Every job sets `$queue` explicitly.
+- Every job sets `$queue` explicitly. AI jobs use `config('evalyst.ai.queue')`.
+- **One queue only** (for example a Cloud plan with a single managed queue): set `EVALYST_AI_QUEUE=default`. Everything then runs on `default`, so that worker needs the AI settings: timeout **≥ 340s** and concurrency 2–4. The `openai` rate limiter still caps AI calls. Invitation emails and choice-question scoring can wait behind an AI backlog after a big quiz, which is acceptable. Switch while the `ai` queue is empty (no generation or grading running): jobs already waiting on `ai` stay there once no worker reads it. `grading:recover` re-dispatches stuck grading after 15 minutes, but not question generations.
 - The worker timeout must always be longer than the job's `timeout`, and `retry_after` in `config/queue.php` must be longer than both. Otherwise jobs run twice.
 - Before adding Managed Queues, check the current Cloud docs (`https://cloud.laravel.com/docs/llms.txt`) for their package requirements (e.g. `aws/aws-sdk-php`).
 

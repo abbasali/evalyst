@@ -84,7 +84,7 @@ Also run the scheduler in a second terminal. It auto-submits quiz attempts when 
 php artisan schedule:work
 ```
 
-In production, run a queue worker for `ai,default` and the scheduler (`php artisan schedule:run` every minute).
+In production, run a queue worker for `ai,default` and the scheduler (`php artisan schedule:run` every minute). If you can only run one queue, set `EVALYST_AI_QUEUE=default` and give that worker a timeout of at least 340 seconds, since AI jobs can take up to 330.
 
 ## Basic usage
 
