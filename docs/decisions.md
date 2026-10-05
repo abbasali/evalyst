@@ -182,3 +182,7 @@ The instructor picked these from a list of options:
 **D-030 — All access codes are 6 characters** · 2026-10-05
 Roster codes are now 6 characters, like shared codes (this replaces the 8-character roster codes from D-020). Every new code is checked against both `participants.access_code` and `assessments.shared_code`, so a code can't be both. `/join` looks for a roster code first, then a shared code, whatever the length, so 8-character roster codes issued earlier keep working. The 20-character alphabet gives about 6.4×10⁷ codes. Together with the join throttle (10 per minute per browser session), guessing one is impractical.
 _Why:_ the instructor wanted a single, short code format for students.
+
+**D-031 — Every student gets the full quiz duration** · 2026-10-05
+A quiz's `closes_at` is the last moment to **start**. An attempt's deadline is `started_at + duration_minutes`, no longer capped at `closes_at`, so a student who starts at 10:59 for a 30-minute quiz closing at 11:00 works until 11:29. Automatic release, early release and archiving already wait for running attempts to finish. The student landing page says "Start by … · you get the full N minutes".
+_Why:_ the settings form already promised "the last moment to start", and capping silently cut short students who started late in the window.

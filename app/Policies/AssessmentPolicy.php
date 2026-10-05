@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\AttemptStatus;
 use App\Models\Assessment;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
@@ -60,7 +61,11 @@ class AssessmentPolicy
             return Response::deny(__('Only a published :noun can be archived.', ['noun' => $assessment->noun()]));
         }
 
-        return $assessment->isClosed() || ! $assessment->hasAttempts()
+        // Attempts can run past closing time (D-031), so wait for the last one to finish.
+        $stillWorking = $assessment->isQuiz()
+            && $assessment->attempts()->where('attempts.status', AttemptStatus::InProgress)->exists();
+
+        return ($assessment->isClosed() && ! $stillWorking) || ! $assessment->hasAttempts()
             ? Response::allow()
             : Response::deny(__('Students are still working on this :noun. Archive it after it closes.', ['noun' => $assessment->noun()]));
     }

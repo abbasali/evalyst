@@ -123,7 +123,11 @@ it('does not archive a quiz while students are taking it', function () {
 
     $this->post(route('quizzes.archive', [$team, $quiz]))->assertForbidden();
 
+    // Closed, but the attempt may still run its full duration.
     $quiz->update(['closes_at' => now()->subMinute()]);
+    $this->post(route('quizzes.archive', [$team, $quiz]))->assertForbidden();
+
+    $quiz->attempts()->update(['attempts.status' => 'submitted', 'submitted_at' => now()]);
     $this->post(route('quizzes.archive', [$team, $quiz]))->assertRedirect();
     expect($quiz->fresh()->status)->toBe(AssessmentStatus::Archived);
 });
