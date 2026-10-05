@@ -124,6 +124,7 @@ Route::get('attempts/{attempt}', [AttemptController::class, 'show'])->name('atte
 Route::get('assessments/{assessment}/export.csv', [ExportController::class, 'assessment'])->name('assessments.export');
 Route::post('assessments/{assessment}/duplicate', DuplicateAssessmentController::class)->name('assessments.duplicate');
 Route::get('gradebook.csv', [ExportController::class, 'gradebook'])->name('gradebook');
+Route::get('scores.csv', [ExportController::class, 'scores'])->name('scores');
 Route::get('ai-usage', AiUsageController::class)->name('ai-usage');
 Route::get('review/submissions/{submission}', [SubmissionReviewController::class, 'show'])->name('review.submissions.show');
 Route::put('review/submissions/{submission}', [SubmissionReviewController::class, 'update'])->name('review.submissions.update');

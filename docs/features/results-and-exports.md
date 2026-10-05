@@ -41,9 +41,10 @@ These are generated in the request when small (≤ 500 rows), and otherwise as a
 | Quiz results       | roll_number, name, status, submitted_at, auto_submitted, focus_lost, Q1 … Qn (score), total, max                           |
 | Assignment results | roll_number, name, submitted_at, minutes_late, commit_sha, rule_1 … rule_n (score), raw_score, penalty, score, max, status |
 | Course gradebook   | roll_number, name, then one column per assessment (published final score, blank otherwise), total                          |
+| Course scores      | Same columns as the gradebook, but every graded score (quiz graded, submission final), released or not                     |
 
 - Instructor exports show **all** scores, published or not. A `status` column makes unpublished ones visible.
-- The gradebook includes only published scores.
+- The gradebook includes only published scores. The course scores export (`scores.csv`) is the instructor view of the same sheet.
 - Times are given in the course timezone, ISO 8601.
 
 ## AI cost panel: `/{course}/settings/ai-usage`

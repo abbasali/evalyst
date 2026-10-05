@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Instructor;
 
 use App\Enums\AssessmentStatus;
-use App\Enums\AttemptStatus;
-use App\Enums\SubmissionStatus;
+use App\Grading\ParticipantScore;
 use App\Http\Controllers\Controller;
 use App\Models\Answer;
 use App\Models\Assessment;
@@ -13,6 +12,7 @@ use App\Models\Participant;
 use App\Models\Student;
 use App\Models\Team;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -32,44 +32,78 @@ class ExportController extends Controller
             : $this->quizCsv($assessment, $time);
     }
 
+    /**
+     * Final scores students can see: published, and only once results are released.
+     */
     public function gradebook(Team $currentTeam): StreamedResponse
     {
-        $assessments = $currentTeam->assessments()
+        return $this->scoreSheet(
+            $currentTeam,
+            Str::slug($currentTeam->name).'-gradebook.csv',
+            '# Final scores students can see. Blank = not taken, not graded, under review, or results not released.',
+            fn (?Participant $participant, Assessment $assessment, bool $released): ?float => $released
+                ? ParticipantScore::published($participant, $assessment->isAssignment())
+                : null,
+            [
+                'attempt:id,participant_id,status,score',
+                'attempt.answers:id,attempt_id,published_at',
+                'currentSubmission:id,participant_id,status,score,published_at',
+            ],
+        );
+    }
+
+    /**
+     * Every finished grade, released to students or not.
+     */
+    public function scores(Team $currentTeam): StreamedResponse
+    {
+        return $this->scoreSheet(
+            $currentTeam,
+            Str::slug($currentTeam->name).'-scores.csv',
+            '# Graded scores, whether or not results are released. Blank = not taken, still grading, or under review.',
+            fn (?Participant $participant, Assessment $assessment): ?float => ParticipantScore::graded($participant, $assessment->isAssignment()),
+            ['attempt:id,participant_id,status,score', 'currentSubmission:id,participant_id,status,score'],
+        );
+    }
+
+    /**
+     * One row per student, one column per published or archived assessment, then a total.
+     *
+     * @param  callable(?Participant, Assessment, bool): ?float  $score
+     * @param  array<int, string>  $relations  participant relations $score reads
+     */
+    private function scoreSheet(Team $team, string $filename, string $note, callable $score, array $relations): StreamedResponse
+    {
+        $assessments = $team->assessments()
             ->whereIn('status', [AssessmentStatus::Published, AssessmentStatus::Archived])
             ->orderBy('closes_at')
             ->get();
 
-        // Students only see an assessment's scores once its results are released.
+        /** @var Collection<int, bool> $released */
         $released = $assessments->mapWithKeys(fn (Assessment $assessment) => [$assessment->id => $assessment->resultsReleased()]);
         $ids = $assessments->modelKeys();
 
-        return $this->stream(Str::slug($currentTeam->name).'-gradebook.csv', function ($out) use ($currentTeam, $assessments, $released, $ids) {
-            fputcsv($out, ['# Final scores students can see. Blank = not taken, not graded, under review, or results not released.'], escape: '');
+        return $this->stream($filename, function ($out) use ($team, $note, $score, $relations, $assessments, $released, $ids) {
+            fputcsv($out, [$note], escape: '');
             fputcsv($out, [
                 'roll_number', 'name',
                 ...$assessments->map(fn (Assessment $assessment) => $this->safe("{$assessment->title} ({$assessment->type->value})"))->all(),
                 'total',
             ], escape: '');
 
-            $currentTeam->students()
+            $team->students()
                 ->orderBy('roll_number')
-                ->with(['participants' => fn ($query) => $query->whereIn('assessment_id', $ids)->with([
-                    'attempt:id,participant_id,status,score',
-                    'attempt.answers:id,attempt_id,published_at',
-                    'currentSubmission:id,participant_id,status,score,published_at',
-                ])])
+                ->with(['participants' => fn ($query) => $query->whereIn('assessment_id', $ids)->with($relations)])
                 ->lazy(200)
-                ->each(function (Student $student) use ($out, $assessments, $released) {
+                ->each(function (Student $student) use ($out, $score, $assessments, $released) {
                     $participants = $student->participants->keyBy('assessment_id');
 
-                    $scores = $assessments->map(fn (Assessment $assessment) => $released[$assessment->id]
-                        ? $this->publishedScore($participants->get($assessment->id), $assessment)
-                        : null);
+                    $scores = $assessments->map(fn (Assessment $assessment) => $score($participants->get($assessment->id), $assessment, $released[$assessment->id]));
 
                     fputcsv($out, [
                         $this->safe($student->roll_number),
                         $this->safe($student->name),
-                        ...$scores->map(fn (?float $score) => $score === null ? '' : $score)->all(),
+                        ...$scores->map(fn (?float $value) => $value === null ? '' : $value)->all(),
                         round($scores->filter()->sum(), 2),
                     ], escape: '');
                 });
@@ -150,31 +184,6 @@ class ExportController extends Controller
                     ], escape: '');
                 });
         });
-    }
-
-    /**
-     * The final score a student can see, or null.
-     */
-    private function publishedScore(?Participant $participant, Assessment $assessment): ?float
-    {
-        if ($participant === null) {
-            return null;
-        }
-
-        if ($assessment->isAssignment()) {
-            $submission = $participant->currentSubmission;
-
-            return $submission && $submission->status === SubmissionStatus::Final && $submission->published_at !== null && $submission->score !== null
-                ? (float) $submission->score
-                : null;
-        }
-
-        $attempt = $participant->attempt;
-
-        return $attempt && $attempt->status === AttemptStatus::Graded && $attempt->score !== null
-            && $attempt->answers->every(fn (Answer $answer) => $answer->published_at !== null)
-            ? (float) $attempt->score
-            : null;
     }
 
     /**
