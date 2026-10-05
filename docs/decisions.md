@@ -198,3 +198,7 @@ _Why:_ the app is shared for any programming course, not just the author's Larav
 **D-034 — Configurable AI queue** · 2026-10-05
 AI jobs (`GenerateQuestions`, `GradeOpenAnswer`, `GradeSubmission`) run on `config('evalyst.ai.queue')`, set by `EVALYST_AI_QUEUE` (default `ai`). Set it to `default` to run everything on one queue. `composer dev` listens to the AI queue and `default`, without duplicates. The worker timeout for AI jobs is ≥ 340s, because `GenerateQuestions` has a 330s timeout (the deploy doc said 330s).
 _Why:_ the author's Laravel Cloud plan includes only one managed queue.
+
+**D-035 — `aws/aws-sdk-php` for Laravel Cloud** · 2026-10-05
+Added `aws/aws-sdk-php`, because Laravel Cloud's Managed Queues (SQS) need it. Locally and in tests the queue stays on `database`/`sync`, so the SDK is only used in production. It also installs `aws/aws-crt-php`, `mtdowling/jmespath.php` and `symfony/filesystem`.
+_Why:_ deployment to Laravel Cloud (M12); approved by the author.
