@@ -72,6 +72,8 @@ Every new instructor-facing resource gets a test showing that an instructor from
 
 ## External services (no real network, ever)
 
+`Tests\TestCase` calls `Http::preventStrayRequests()` for every test, and `phpunit.xml` blanks `OPENAI_API_KEY` and `GITHUB_TOKEN`, so any unfaked HTTP call fails the test. Watch the sync test queue: anything that submits an attempt or a repository runs grading inline unless the test calls `Queue::fake()` or fakes the agents.
+
 - **AI:** use the Laravel AI SDK's agent fakes. Run `search-docs` (`packages: ["laravel/ai"]`) for the exact API, e.g. faking an agent class with canned structured responses and asserting what it was prompted with. Assert (a) what went into the prompt (rubric, delimited student answer) and (b) how each outcome is handled: valid, invalid, exception.
 - **GitHub:** call `Http::preventStrayRequests()` in the test setup, then `Http::fake([...])` with fixtures from `tests/Fixtures/github/`. Assert files were _not_ fetched for ignored paths with `Http::assertNotSent(fn ($r) => str_contains($r->url(), '/vendor/'))`.
 - **Mail:** `Mail::fake()` / `Notification::fake()` for invitations.
