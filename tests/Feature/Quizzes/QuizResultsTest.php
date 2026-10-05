@@ -1,9 +1,16 @@
 <?php
 
+use App\Actions\Attempts\StartAttempt;
 use App\Actions\Grading\RefreshAttemptScore;
+use App\Enums\AttemptEventType;
+use App\Enums\AttemptStatus;
 use App\Enums\ReleaseMode;
+use App\Jobs\GradeAttempt;
+use App\Models\Attempt;
 use App\Models\AuditLog;
 use App\Models\Participant;
+use App\Models\Team;
+use Illuminate\Support\Facades\Queue;
 
 test('results list every participant with their total', function () {
     [, $team] = actingAsInstructor();
@@ -64,4 +71,55 @@ test('results with correct answers cannot be released while students can still t
     $this->post(route('quizzes.results.release', [$team, $quiz]))->assertRedirect();
 
     expect($quiz->refresh()->results_released_at)->toBeNull();
+});
+
+/**
+ * A quiz with answers shown after release, closing in 10 minutes, with one 30-minute attempt started now.
+ */
+function quizWithRunningAttempt(Team $team, array $attributes = []): Attempt
+{
+    [, $participant] = openQuizWithParticipant(['team_id' => $team->id, 'show_answers_after_release' => true,
+        'closes_at' => now()->addMinutes(10), 'duration_minutes' => 30, ...$attributes]);
+
+    return app(StartAttempt::class)->handle($participant)[0];
+}
+
+test('releasing submits abandoned attempts first, even if the expiry job never ran', function () {
+    Queue::fake();
+    [, $team] = actingAsInstructor();
+    $attempt = quizWithRunningAttempt($team);
+    $quiz = $attempt->participant->assessment;
+
+    $this->travel(32)->minutes();
+    $this->post(route('quizzes.results.release', [$team, $quiz]))->assertRedirect();
+
+    expect($attempt->fresh()->status)->toBe(AttemptStatus::Submitted)
+        ->and($attempt->events()->where('type', AttemptEventType::AutoSubmitted)->exists())->toBeTrue()
+        ->and($quiz->refresh()->results_released_at)->not->toBeNull();
+    Queue::assertPushed(GradeAttempt::class, 1);
+});
+
+test('results with correct answers cannot be released while a student is still within their time', function () {
+    [, $team] = actingAsInstructor();
+    $attempt = quizWithRunningAttempt($team);
+    $quiz = $attempt->participant->assessment;
+
+    $this->travel(15)->minutes();
+    $this->post(route('quizzes.results.release', [$team, $quiz]))
+        ->assertInertiaFlash('toast.message', '1 student is still working, and releasing would show them the correct answers. Their time ends at '
+            .$attempt->deadline_at->setTimezone($quiz->team->timezone)->format('g:i A').'.');
+
+    expect($quiz->refresh()->results_released_at)->toBeNull()
+        ->and($attempt->fresh()->status)->toBe(AttemptStatus::InProgress);
+});
+
+test('automatic release does not wait for an abandoned attempt the expiry job has not swept', function () {
+    [, $team] = actingAsInstructor();
+    $quiz = quizWithRunningAttempt($team, ['release_mode' => ReleaseMode::Automatic])->participant->assessment;
+
+    $this->travel(15)->minutes();
+    expect($quiz->autoReleaseDue())->toBeFalse();
+
+    $this->travel(17)->minutes();
+    expect($quiz->autoReleaseDue())->toBeTrue();
 });

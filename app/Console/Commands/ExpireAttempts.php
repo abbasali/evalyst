@@ -2,10 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Actions\Attempts\SubmitAttempt;
-use App\Enums\AttemptEventType;
-use App\Enums\AttemptStatus;
-use App\Models\Attempt;
+use App\Actions\Attempts\ExpireOverdueAttempts;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -14,18 +11,9 @@ use Illuminate\Console\Command;
 #[Description('Auto-submit quiz attempts whose time has run out (students who closed the tab)')]
 class ExpireAttempts extends Command
 {
-    public function handle(SubmitAttempt $submit): int
+    public function handle(ExpireOverdueAttempts $expire): int
     {
-        $count = 0;
-
-        Attempt::query()
-            ->where('status', AttemptStatus::InProgress)
-            ->where('deadline_at', '<', now()->subSeconds((int) config('evalyst.quiz.save_grace_seconds')))
-            ->chunkById(100, function ($attempts) use ($submit, &$count) {
-                foreach ($attempts as $attempt) {
-                    $count += (int) $submit->handle($attempt, AttemptEventType::AutoSubmitted);
-                }
-            });
+        $count = $expire->handle();
 
         $this->info("Auto-submitted {$count} attempt(s).");
 

@@ -6,7 +6,6 @@ use App\Concerns\BelongsToCourse;
 use App\Enums\AccessMode;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
-use App\Enums\AttemptStatus;
 use App\Enums\LatePolicy;
 use App\Enums\PenaltyType;
 use App\Enums\ReleaseMode;
@@ -247,7 +246,8 @@ class Assessment extends Model
             return $latest === null || now()->gte($latest);
         }
 
-        return ! $this->attempts()->where('attempts.status', AttemptStatus::InProgress)->exists();
+        // Time-based, so an abandoned attempt the expiry job hasn't swept yet doesn't block release.
+        return ! $this->attempts()->stillWorking()->exists();
     }
 
     public function maxScore(): float

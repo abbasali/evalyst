@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Instructor;
 
 use App\Actions\Assessments\ReleaseResults;
+use App\Actions\Attempts\ExpireOverdueAttempts;
 use App\Enums\AnswerGradingStatus;
-use App\Enums\AttemptStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Instructor\Concerns\PresentsQuiz;
 use App\Models\Assessment;
@@ -12,6 +12,7 @@ use App\Models\Participant;
 use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -69,17 +70,37 @@ class QuizResultsController extends Controller
         ]);
     }
 
-    public function release(Team $currentTeam, Assessment $quiz, Request $request, ReleaseResults $release): RedirectResponse
+    public function release(Team $currentTeam, Assessment $quiz, Request $request, ReleaseResults $release, ExpireOverdueAttempts $expire): RedirectResponse
     {
         // Also allowed in automatic mode, to release early.
         abort_if($quiz->isDraft(), 422);
 
-        // Correct answers must not reach students while classmates can still take the quiz.
-        if ($quiz->isQuiz() && $quiz->show_answers_after_release && ! $quiz->autoReleaseDue()
-            && (! $quiz->isClosed() || $quiz->attempts()->where('attempts.status', AttemptStatus::InProgress)->exists())) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Students can still take this quiz, and releasing would show them the correct answers. Wait until it closes, or turn off "Show correct answers" in Settings first.')]);
+        // Submit abandoned attempts now rather than relying on the expiry job having run.
+        if ($quiz->isQuiz()) {
+            $expire->handle($quiz);
+        }
 
-            return back();
+        // Correct answers must not reach students while classmates can still take the quiz.
+        if ($quiz->isQuiz() && $quiz->show_answers_after_release && ! $quiz->autoReleaseDue()) {
+            if (! $quiz->isClosed()) {
+                Inertia::flash('toast', ['type' => 'error', 'message' => __('Students can still take this quiz, and releasing would show them the correct answers. Wait until it closes, or turn off "Show correct answers" in Settings first.')]);
+
+                return back();
+            }
+
+            $working = $quiz->attempts()->stillWorking();
+            $count = (clone $working)->count();
+
+            if ($count > 0) {
+                $endsAt = Date::parse((clone $working)->max('attempts.deadline_at'))->setTimezone($currentTeam->timezone)->format('g:i A');
+                Inertia::flash('toast', ['type' => 'error', 'message' => trans_choice(
+                    ':count student is still working, and releasing would show them the correct answers. Their time ends at :time.|:count students are still working, and releasing would show them the correct answers. The last one\'s time ends at :time.',
+                    $count,
+                    ['time' => $endsAt],
+                )]);
+
+                return back();
+            }
         }
 
         $release->release($request->user(), $quiz);
