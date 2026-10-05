@@ -73,7 +73,7 @@ Then it redirects to question 1.
 
 - The page receives `deadline_at` and the `server_now` ISO timestamp. The client works out the clock offset and counts down using `deadline_at - (Date.now() + offset)`, so the local clock doesn't matter.
 - Format `mm:ss`, or `h:mm:ss` when over an hour. A non-blocking warning toast appears at **5 minutes** and at **1 minute**, and the timer turns red in the last minute.
-- At 0: flush pending saves, then call submit (`auto_submitted = true`). If the tab was closed, the `attempts:expire` scheduled command auto-submits within a minute.
+- At 0: flush pending saves, then call submit (`auto_submitted = true`). If the tab was closed, the `attempts:expire` scheduled command auto-submits within a minute. Releasing results also auto-submits the quiz's overdue attempts first, so release doesn't depend on that job having run (D-032).
 - On a refresh the timer picks up again from the server values.
 
 ## Review & submit

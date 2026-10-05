@@ -87,6 +87,28 @@ class Attempt extends Model
         $query->whereHas('participant.assessment', fn (Builder $query) => $query->where('team_id', $team->id));
     }
 
+    /**
+     * In progress but past the deadline plus the save grace: due to be auto-submitted.
+     *
+     * @param  Builder<Attempt>  $query
+     */
+    public function scopeOverdue(Builder $query): void
+    {
+        $query->where('attempts.status', AttemptStatus::InProgress)
+            ->where('attempts.deadline_at', '<', now()->subSeconds((int) config('evalyst.quiz.save_grace_seconds')));
+    }
+
+    /**
+     * In progress with time (or save grace) left: the student may still be answering.
+     *
+     * @param  Builder<Attempt>  $query
+     */
+    public function scopeStillWorking(Builder $query): void
+    {
+        $query->where('attempts.status', AttemptStatus::InProgress)
+            ->where('attempts.deadline_at', '>=', now()->subSeconds((int) config('evalyst.quiz.save_grace_seconds')));
+    }
+
     public function isInProgress(): bool
     {
         return $this->status === AttemptStatus::InProgress;

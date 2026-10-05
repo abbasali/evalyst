@@ -186,3 +186,7 @@ _Why:_ the instructor wanted a single, short code format for students.
 **D-031 — Every student gets the full quiz duration** · 2026-10-05
 A quiz's `closes_at` is the last moment to **start**. An attempt's deadline is `started_at + duration_minutes`, no longer capped at `closes_at`, so a student who starts at 10:59 for a 30-minute quiz closing at 11:00 works until 11:29. Automatic release, early release and archiving already wait for running attempts to finish. The student landing page says "Start by … · you get the full N minutes".
 _Why:_ the settings form already promised "the last moment to start", and capping silently cut short students who started late in the window.
+
+**D-032 — Release doesn't depend on the expiry job** · 2026-10-05
+Clicking **Release results** first auto-submits the quiz's overdue attempts (`ExpireOverdueAttempts`, the same action `attempts:expire` runs) and queues their grading. If correct answers would be shown and a student is still within their time, release is refused and the error says when the last deadline ends. With answers hidden, early release still works (D-029). Automatic release counts only attempts with time left (`Attempt::stillWorking()`: in progress, deadline plus save grace not yet passed), so an abandoned attempt the job hasn't swept no longer blocks it.
+_Why:_ if the scheduler stopped, one student who closed the tab would hold back the whole class's results.
