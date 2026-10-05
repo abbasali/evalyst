@@ -34,28 +34,28 @@ teams (Course) ─┬─< team_members >── users (Instructor)
 
 ## Enums (`app/Enums`, string-backed)
 
-| Enum                  | Cases                                                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `QuestionType`        | `single_choice`, `multiple_choice`, `open_text`, `open_code`                                                                    |
-| `ChoiceScoringPolicy` | `all_or_nothing`, `partial`, `partial_with_penalty`                                                                             |
-| `Difficulty`          | `easy`, `medium`, `hard`                                                                                                        |
-| `QuestionSource`      | `manual`, `ai`                                                                                                                  |
+| Enum                  | Cases                                                                                                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `QuestionType`        | `single_choice`, `multiple_choice`, `open_text`, `open_code`                                                                                                                   |
+| `ChoiceScoringPolicy` | `all_or_nothing`, `partial`, `partial_with_penalty`                                                                                                                            |
+| `Difficulty`          | `easy`, `medium`, `hard`                                                                                                                                                       |
+| `QuestionSource`      | `manual`, `ai`                                                                                                                                                                 |
 | `CodeLanguage`        | `bash`, `blade`, `c`, `csharp`, `cpp`, `css`, `go`, `html`, `java`, `javascript`, `json`, `kotlin`, `php`, `python`, `ruby`, `rust`, `sql`, `swift`, `typescript`, `plaintext` |
-| `GenerationStatus`    | `pending`, `running`, `completed`, `failed`                                                                                     |
-| `AssessmentType`      | `quiz`, `assignment`                                                                                                            |
-| `AssessmentStatus`    | `draft`, `published`, `archived` (whether it is open/closed is worked out from dates, see below)                                |
-| `AccessMode`          | `roster`, `shared_code`                                                                                                         |
-| `ReleaseMode`         | `manual`, `automatic`                                                                                                           |
-| `AttemptStatus`       | `in_progress`, `submitted`, `grading`, `graded`                                                                                 |
-| `AnswerGradingStatus` | `ungraded` (not submitted yet), `pending` (queued for AI), `needs_review`, `failed`, `final` (score settled + published)        |
-| `LatePolicy`          | `not_allowed`, `allowed`, `penalty`                                                                                             |
-| `PenaltyType`         | `fixed`, `per_hour`, `per_day`                                                                                                  |
-| `LateOverride`        | `allow`, `block` (nullable column = follow the assessment's policy)                                                             |
-| `SubmissionStatus`    | `submitted`, `grading`, `needs_review`, `failed`, `final` (score settled + published)                                           |
-| `RuleKind`            | `automated`, `ai`                                                                                                               |
-| `AutomatedCheck`      | `min_commits`, `min_commit_days`, `commit_message_pattern`, `path_exists`, `path_absent`, `file_contains`                       |
-| `AiRunPurpose`        | `question_generation`, `question_verification`, `open_answer_grading`, `project_grading`                                        |
-| `AttemptEventType`    | `focus_lost`, `focus_returned`, `pasted`, `fullscreen_exited`, `resumed`, `auto_submitted`, `force_submitted`, `resume_allowed` |
+| `GenerationStatus`    | `pending`, `running`, `completed`, `failed`                                                                                                                                    |
+| `AssessmentType`      | `quiz`, `assignment`                                                                                                                                                           |
+| `AssessmentStatus`    | `draft`, `published`, `archived` (whether it is open/closed is worked out from dates, see below)                                                                               |
+| `AccessMode`          | `roster`, `shared_code`                                                                                                                                                        |
+| `ReleaseMode`         | `manual`, `automatic`                                                                                                                                                          |
+| `AttemptStatus`       | `in_progress`, `submitted`, `grading`, `graded`                                                                                                                                |
+| `AnswerGradingStatus` | `ungraded` (not submitted yet), `pending` (queued for AI), `needs_review`, `failed`, `final` (score settled + published)                                                       |
+| `LatePolicy`          | `not_allowed`, `allowed`, `penalty`                                                                                                                                            |
+| `PenaltyType`         | `fixed`, `per_hour`, `per_day`                                                                                                                                                 |
+| `LateOverride`        | `allow`, `block` (nullable column = follow the assessment's policy)                                                                                                            |
+| `SubmissionStatus`    | `submitted`, `grading`, `needs_review`, `failed`, `final` (score settled + published)                                                                                          |
+| `RuleKind`            | `automated`, `ai`                                                                                                                                                              |
+| `AutomatedCheck`      | `min_commits`, `min_commit_days`, `commit_message_pattern`, `path_exists`, `path_absent`, `file_contains`                                                                      |
+| `AiRunPurpose`        | `question_generation`, `question_verification`, `open_answer_grading`, `project_grading`                                                                                       |
+| `AttemptEventType`    | `focus_lost`, `focus_returned`, `pasted`, `fullscreen_exited`, `resumed`, `auto_submitted`, `force_submitted`, `resume_allowed`                                                |
 
 ## Tables
 
@@ -211,7 +211,7 @@ Unique: (`assessment_id`, `student_id`).
 | public_id             | ulid, unique                    |                                                                                                                                                 |
 | status                | `AttemptStatus`                 |                                                                                                                                                 |
 | started_at            | datetime                        |                                                                                                                                                 |
-| deadline_at           | datetime                        | `started_at + duration` (closing time is the last moment to start, D-031)                                                                                                         |
+| deadline_at           | datetime                        | `started_at + duration` (closing time is the last moment to start, D-031)                                                                       |
 | submitted_at          | datetime, nullable              |                                                                                                                                                 |
 | auto_submitted        | bool, default false             |                                                                                                                                                 |
 | question_order        | json                            | Array of `assessment_question_id`s, fixed at start                                                                                              |
