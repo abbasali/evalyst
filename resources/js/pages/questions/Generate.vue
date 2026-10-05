@@ -104,9 +104,9 @@ const statusVariant = {
 } as const;
 
 const examples = [
-    'PHP variables, data types and control structures for beginners',
-    'Laravel Eloquent relationships: hasMany, belongsTo, eager loading and N+1',
-    'PHP arrays: array_map, array_filter, sorting functions and destructuring',
+    'Python variables, data types and control flow for beginners',
+    'JavaScript promises, async/await and the event loop',
+    'SQL joins, GROUP BY and aggregate functions',
 ];
 </script>
 
@@ -139,7 +139,7 @@ const examples = [
                         v-model="form.prompt"
                         rows="4"
                         maxlength="1000"
-                        placeholder="e.g. PHP arrays and array functions for beginners; focus on array_map, array_filter and sorting"
+                        placeholder="e.g. Java collections for beginners; focus on ArrayList, HashMap and iterating over them"
                         :aria-invalid="!!form.errors.prompt || undefined"
                         v-focus
                     />

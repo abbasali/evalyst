@@ -217,7 +217,7 @@ const releaseChoices = [
                         v-model="form.instructions"
                         :rows="10"
                         :readonly="readOnly"
-                        placeholder="Build a Laravel app where… Requirements: …"
+                        placeholder="Build a web app where… Requirements: …"
                     />
                     <p class="text-xs text-muted-foreground">
                         Students read this, and the AI grades against it.

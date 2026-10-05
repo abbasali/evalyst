@@ -30,7 +30,7 @@ Fetch the recursive tree at `commit_sha`. If GitHub reports it as `truncated` (a
 
 Remove an entry if **any** of these match:
 
-**Ignored directories** (any path segment matches): `vendor`, `node_modules`, `.git`, `storage`, `bootstrap/cache`, `public/build`, `public/hot`, `public/storage`, `dist`, `build`, `coverage`, `.idea`, `.vscode`, `.fleet`, `.next`, `.nuxt`, `.cache`, `__pycache__`, `.venv`, `venv`, `target`, `.phpunit.cache`, `.pest`, `.turbo`.
+**Ignored directories** (any path segment matches): `vendor`, `node_modules`, `.git`, `storage`, `bootstrap/cache`, `public/build`, `public/hot`, `public/storage`, `dist`, `build`, `coverage`, `.idea`, `.vscode`, `.fleet`, `.next`, `.nuxt`, `.cache`, `__pycache__`, `.venv`, `venv`, `target`, `.phpunit.cache`, `.pest`, `.turbo`, `.pytest_cache`, `.mypy_cache`, `.tox`, `.gradle`, `obj`, `.dart_tool`, `Pods`, `.svelte-kit`, `.output`. Compiled output (`*.pyc`, `*.class`, `*.jar`, `*.o`, …) and `go.sum` are skipped too.
 
 **Ignored files and patterns:** `*.lock`, `composer.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lockb`, `*.min.js`, `*.min.css`, `*.map`, `.env`, `.env.*` except `.env.example`, `*.log`, `*.sqlite`, `*.sqlite3`, `.DS_Store`, `*.phar`.
 
@@ -47,13 +47,13 @@ The assessment's `extra_ignored_paths` (globs) are added to this list. The list 
 
 Order the remaining files by priority group, then by path:
 
-1. `README*`, `composer.json`, `package.json`
-2. `routes/**`, `app/**`, `database/migrations/**`, `config/*.php` (only non-default ones if we can tell; otherwise all)
-3. `resources/views/**`, `resources/js/**`, `resources/css/**`
-4. `tests/**`, `database/seeders/**`, `database/factories/**`
+1. `README*` and root project manifests for any ecosystem (`composer.json`, `package.json`, `requirements*.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle*`, `Gemfile`, `*.csproj`, `CMakeLists.txt`, `Makefile`, …)
+2. source: `src/**`, `app/**`, `lib/**`, `cmd/**`, `internal/**`, `pkg/**`, `routes/**`, `config/**`, migrations, and source files at the repo root
+3. views and assets: `resources/**`, `templates/**`, `views/**`, `components/**`, `pages/**`, `static/**`, `public/**`, root `*.html` / `*.css`
+4. `tests/**`, `test/**`, `spec/**`, `__tests__/**`, seeders and factories
 5. everything else
 
-A Laravel skeleton includes many untouched default files. That's acceptable, because the AI is told it's a Laravel app and to focus on the student's own code. Optional improvement: skip files whose blob SHA matches a known Laravel skeleton SHA list. That's out of scope for v1.
+Framework skeletons (Laravel, Rails, Django, Next.js…) include many untouched default files. That's acceptable, because the AI is told to treat stock skeleton files as not the student's work. Optional improvement: skip files whose blob SHA matches a known skeleton SHA list. That's out of scope for v1.
 
 ### Step 3: stream within the budget
 

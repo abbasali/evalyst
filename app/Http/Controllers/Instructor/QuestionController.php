@@ -239,6 +239,9 @@ class QuestionController extends Controller
             'difficulties' => Difficulty::options(),
             'scoringPolicies' => ChoiceScoringPolicy::options(),
             'codeLanguages' => CodeLanguage::options(),
+            // New code questions start in the course's most recently used language.
+            'defaultCodeLanguage' => $team->questions()->whereNotNull('code_language')->latest('id')->value('code_language')
+                ?? CodeLanguage::PlainText->value,
             'tags' => $team->tags()->withCount('questions')->orderBy('name')->get()
                 ->map(fn (Tag $tag) => ['id' => $tag->id, 'name' => $tag->name, 'questions_count' => $tag->questions_count]),
         ];

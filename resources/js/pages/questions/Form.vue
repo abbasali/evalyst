@@ -81,7 +81,7 @@ const form = useForm({
     options: props.question?.options.length
         ? props.question.options.map((option) => ({ ...option }))
         : blankOptions(),
-    code_language: props.question?.code_language ?? 'php',
+    code_language: props.question?.code_language ?? props.defaultCodeLanguage,
     default_marks: props.question?.default_marks ?? 1,
     scoring_policy: props.question?.scoring_policy ?? 'all_or_nothing',
     model_answer: props.question?.model_answer ?? '',
@@ -283,7 +283,7 @@ const tagError = computed(
                         :rows="6"
                         :readonly="locked"
                         :invalid="!!errors.body"
-                        placeholder="What does the following code print?&#10;&#10;```php&#10;echo 10 <=> 5;&#10;```"
+                        placeholder="What does the following code print?&#10;&#10;```python&#10;print(7 // 2)&#10;```"
                     />
                     <InputError :message="errors.body" />
                 </section>

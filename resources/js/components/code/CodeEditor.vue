@@ -5,19 +5,15 @@ import {
     historyKeymap,
     indentWithTab,
 } from '@codemirror/commands';
-import { css } from '@codemirror/lang-css';
-import { html } from '@codemirror/lang-html';
-import { javascript } from '@codemirror/lang-javascript';
-import { php } from '@codemirror/lang-php';
-import { sql } from '@codemirror/lang-sql';
 import {
     bracketMatching,
     defaultHighlightStyle,
     indentOnInput,
+    StreamLanguage,
     syntaxHighlighting,
 } from '@codemirror/language';
 import type { Extension } from '@codemirror/state';
-import { EditorState } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import {
     EditorView,
     highlightActiveLine,
@@ -46,24 +42,61 @@ const emit = defineEmits<{ paste: [length: number] }>();
 const host = ref<HTMLDivElement>();
 let view: EditorView | null = null;
 
-function languageExtension(language: string | null): Extension {
-    switch (language) {
-        case 'php':
-            return php();
-        case 'blade':
-        case 'html':
-            return html();
-        case 'javascript':
-        case 'json':
-            return javascript();
-        case 'typescript':
-            return javascript({ typescript: true });
-        case 'sql':
-            return sql();
-        case 'css':
-            return css();
-        default:
-            return [];
+/**
+ * Each language mode is loaded on demand, so a Python quiz never downloads the PHP parser.
+ * Keep in step with App\Enums\CodeLanguage.
+ */
+const languageLoaders: Record<string, () => Promise<Extension>> = {
+    bash: async () =>
+        StreamLanguage.define(
+            (await import('@codemirror/legacy-modes/mode/shell')).shell,
+        ),
+    blade: async () => (await import('@codemirror/lang-html')).html(),
+    c: async () => (await import('@codemirror/lang-cpp')).cpp(),
+    cpp: async () => (await import('@codemirror/lang-cpp')).cpp(),
+    csharp: async () =>
+        StreamLanguage.define(
+            (await import('@codemirror/legacy-modes/mode/clike')).csharp,
+        ),
+    css: async () => (await import('@codemirror/lang-css')).css(),
+    go: async () => (await import('@codemirror/lang-go')).go(),
+    html: async () => (await import('@codemirror/lang-html')).html(),
+    java: async () => (await import('@codemirror/lang-java')).java(),
+    javascript: async () =>
+        (await import('@codemirror/lang-javascript')).javascript(),
+    json: async () =>
+        (await import('@codemirror/lang-javascript')).javascript(),
+    kotlin: async () =>
+        StreamLanguage.define(
+            (await import('@codemirror/legacy-modes/mode/clike')).kotlin,
+        ),
+    php: async () => (await import('@codemirror/lang-php')).php(),
+    python: async () => (await import('@codemirror/lang-python')).python(),
+    ruby: async () =>
+        StreamLanguage.define(
+            (await import('@codemirror/legacy-modes/mode/ruby')).ruby,
+        ),
+    rust: async () => (await import('@codemirror/lang-rust')).rust(),
+    sql: async () => (await import('@codemirror/lang-sql')).sql(),
+    swift: async () =>
+        StreamLanguage.define(
+            (await import('@codemirror/legacy-modes/mode/swift')).swift,
+        ),
+    typescript: async () =>
+        (await import('@codemirror/lang-javascript')).javascript({
+            typescript: true,
+        }),
+};
+
+const languageCompartment = new Compartment();
+
+async function loadLanguage(language: string | null): Promise<void> {
+    const loader = language ? languageLoaders[language] : undefined;
+    const extension = loader ? await loader() : [];
+
+    // The prop may have changed (or the editor unmounted) while the mode was loading.
+    if (view && language === props.language) {
+        view.dispatch({ effects: languageCompartment.reconfigure(extension) });
     }
 }
 
@@ -103,7 +136,7 @@ onMounted(() => {
                 highlightActiveLine(),
                 syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
                 keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-                languageExtension(props.language),
+                languageCompartment.of([]),
                 placeholderExtension(props.placeholder),
                 theme,
                 EditorView.lineWrapping,
@@ -130,7 +163,14 @@ onMounted(() => {
             ],
         }),
     });
+
+    void loadLanguage(props.language);
 });
+
+watch(
+    () => props.language,
+    (language) => void loadLanguage(language),
+);
 
 watch(model, (value) => {
     if (view && value !== view.state.doc.toString()) {
@@ -140,7 +180,10 @@ watch(model, (value) => {
     }
 });
 
-onBeforeUnmount(() => view?.destroy());
+onBeforeUnmount(() => {
+    view?.destroy();
+    view = null;
+});
 </script>
 
 <template>

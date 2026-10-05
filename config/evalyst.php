@@ -51,11 +51,12 @@ return [
                 'public/build', 'public/hot', 'public/storage', 'dist', 'build',
                 'coverage', '.idea', '.vscode', '.fleet', '.next', '.nuxt', '.cache',
                 '__pycache__', '.venv', 'venv', 'target', '.phpunit.cache', '.pest', '.turbo',
+                '.pytest_cache', '.mypy_cache', '.tox', '.gradle', 'obj', '.dart_tool', 'Pods', '.svelte-kit', '.output',
             ],
             'files' => [
                 '*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'bun.lockb',
                 '*.min.js', '*.min.css', '*.map', '.env', '.env.*', '*.log',
-                '*.sqlite', '*.sqlite3', '.DS_Store', '*.phar',
+                '*.sqlite', '*.sqlite3', '.DS_Store', '*.phar', 'go.sum',
                 // Secrets that should never reach the AI.
                 '*.pem', '*.key', '*.p12', '*.pfx', 'id_rsa*', 'id_ed25519*', 'auth.json', '.npmrc', '.pypirc',
             ],
@@ -66,6 +67,7 @@ return [
                 'zip', 'tar', 'gz', 'rar', '7z',
                 'mp3', 'mp4', 'mov', 'webm', 'wav',
                 'pdf', 'exe', 'dll', 'so', 'dylib', 'bin',
+                'pyc', 'class', 'jar', 'war', 'o', 'a', 'obj', 'pdb', 'wasm',
             ],
         ],
     ],

@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Enums\CodeLanguage;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Strict;
 use Laravel\Ai\Attributes\Timeout;
@@ -36,9 +37,11 @@ class OpenAnswerGrader extends StructuredAgent
             'model_answer' => $this->modelAnswer ?: '(none provided)',
             'rubric' => $this->rubric ?: '(none provided: grade against the model answer)',
             'max_marks' => self::formatMarks($this->maxMarks),
-            'language_note' => $this->codeLanguage !== null
-                ? "This is a code question. The student writes an explanation and code in {$this->codeLanguage}."
-                : '',
+            'language_note' => match ($this->codeLanguage) {
+                null => '',
+                CodeLanguage::PlainText->value => 'This is a code question. The student writes an explanation and code; the language isn\'t specified, so infer it from the question.',
+                default => 'This is a code question. The student writes an explanation and code in '.(CodeLanguage::tryFrom($this->codeLanguage)?->label() ?? $this->codeLanguage).'.',
+            },
         ];
     }
 

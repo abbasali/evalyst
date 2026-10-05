@@ -2,6 +2,7 @@
 
 namespace App\Ai\Agents;
 
+use App\Enums\CodeLanguage;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\Strict;
 use Laravel\Ai\Attributes\Timeout;
@@ -42,6 +43,7 @@ class QuestionGenerator extends StructuredAgent
             'code_output' => $this->includeCodeOutput
                 ? 'Include some "what does this code output?" choice questions: show a short, complete, deterministic snippet and ask for its exact output.'
                 : 'Do not ask "what does this code output?" questions.',
+            'code_languages' => implode(', ', array_column(CodeLanguage::cases(), 'value')),
             'existing' => $this->existingQuestions === []
                 ? '(none yet)'
                 : implode("\n", array_map(fn (string $line) => "- {$line}", $this->existingQuestions)),

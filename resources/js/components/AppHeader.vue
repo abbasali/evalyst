@@ -72,12 +72,12 @@ const mainNavItems = computed<NavItem[]>(() => [
 const rightNavItems: NavItem[] = [
     {
         title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
+        href: 'https://github.com/abbasali/evalyst',
         icon: Folder,
     },
     {
         title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
+        href: 'https://github.com/abbasali/evalyst/tree/main/docs',
         icon: BookOpen,
     },
 ];

@@ -51,7 +51,7 @@ const tab = ref<'write' | 'preview'>('write');
                 </button>
             </div>
             <span class="hidden text-muted-foreground sm:inline">
-                Markdown · use ```php for code
+                Markdown · fence code with its language, e.g. ```python
             </span>
         </div>
         <Textarea
