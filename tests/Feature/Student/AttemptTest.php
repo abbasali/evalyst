@@ -111,6 +111,7 @@ it('answers background saves with JSON when the session is gone or the attempt m
 });
 
 it('accepts saves within the grace window and auto-submits after it', function () {
+    Queue::fake();
     [, , $attempt] = startedAttempt();
     $answer = $attempt->answers()->where('assessment_question_id', $attempt->question_order[2])->sole();
     $url = route('student.answers.save', [$attempt->public_id, 3]);
