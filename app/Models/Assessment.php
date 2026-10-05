@@ -37,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $opens_at
  * @property Carbon $closes_at
  * @property ReleaseMode $release_mode
+ * @property bool $release_results
  * @property Carbon|null $results_released_at
  * @property string|null $auto_publish_threshold
  * @property int|null $created_by
@@ -70,7 +71,7 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable([
     'team_id', 'type', 'title', 'instructions', 'status', 'access_mode', 'shared_code', 'opens_at', 'closes_at',
-    'release_mode', 'results_released_at', 'auto_publish_threshold', 'created_by', 'duration_minutes',
+    'release_mode', 'release_results', 'results_released_at', 'auto_publish_threshold', 'created_by', 'duration_minutes',
     'shuffle_questions', 'shuffle_options', 'show_answers_after_release', 'track_focus', 'one_way_navigation', 'require_fullscreen',
     'late_policy', 'penalty_type', 'penalty_value', 'penalty_cap', 'grace_minutes', 'hard_cutoff_at', 'allow_resubmission',
     'show_rules_to_students', 'extra_ignored_paths',
@@ -223,11 +224,12 @@ class Assessment extends Model
 
     /**
      * Students see published grades once results are released: by hand (manual mode), or
-     * automatically once the assessment has closed and nobody is still mid-attempt.
+     * automatically once the assessment has closed and nobody is still mid-attempt. Never when the
+     * instructor has turned off releasing results to students.
      */
     public function resultsReleased(): bool
     {
-        return $this->results_released_at !== null || $this->autoReleaseDue();
+        return $this->release_results && ($this->results_released_at !== null || $this->autoReleaseDue());
     }
 
     /**
@@ -235,7 +237,7 @@ class Assessment extends Model
      */
     public function autoReleaseDue(): bool
     {
-        if ($this->release_mode !== ReleaseMode::Automatic || $this->isDraft() || now()->lt($this->closes_at)) {
+        if (! $this->release_results || $this->release_mode !== ReleaseMode::Automatic || $this->isDraft() || now()->lt($this->closes_at)) {
             return false;
         }
 
@@ -306,6 +308,7 @@ class Assessment extends Model
             'status' => AssessmentStatus::class,
             'access_mode' => AccessMode::class,
             'release_mode' => ReleaseMode::class,
+            'release_results' => 'boolean',
             'opens_at' => 'datetime',
             'closes_at' => 'datetime',
             'results_released_at' => 'datetime',

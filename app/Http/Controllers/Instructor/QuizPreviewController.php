@@ -29,6 +29,7 @@ class QuizPreviewController extends Controller
                 'duration_minutes' => (int) $quiz->duration_minutes,
                 'one_way_navigation' => $quiz->one_way_navigation,
                 'require_fullscreen' => $quiz->require_fullscreen,
+                'release_results' => $quiz->release_results,
             ],
             'questions' => $items->values()->map(fn (AssessmentQuestion $item) => [
                 'key' => $item->id,

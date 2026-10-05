@@ -77,3 +77,11 @@ test('the shared access actions work for assignments', function () {
     expect($assignment->participants()->count())->toBe(1);
     $this->get(route('assignments.access', [$team, $assignment]))->assertInertia(fn ($page) => $page->component('assignments/Access')->has('participants', 1));
 });
+
+test('an assignment can be set to never release results to students', function () {
+    [, $team] = actingAsInstructor();
+
+    $this->post(route('assignments.store', $team), assignmentPayload(['release_results' => false]))->assertSessionHasNoErrors();
+
+    expect(Assessment::sole()->release_results)->toBeFalse();
+});

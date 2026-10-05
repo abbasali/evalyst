@@ -105,6 +105,7 @@ class QuizController extends Controller
                 'track_focus' => $quiz->track_focus,
                 'one_way_navigation' => $quiz->one_way_navigation,
                 'require_fullscreen' => $quiz->require_fullscreen,
+                'release_results' => $quiz->release_results,
                 'release_mode' => $quiz->release_mode->value,
                 'auto_publish_threshold' => $quiz->auto_publish_threshold !== null ? (float) $quiz->auto_publish_threshold : '',
                 'access_mode' => $quiz->access_mode->value,

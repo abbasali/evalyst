@@ -72,6 +72,8 @@ Every manual change writes an `audit_logs` entry with action `grade.override`, `
 
 Students see an item only when results are released **and** the item has `published_at` set.
 
+**Release results to students** (`release_results`, default on) sits above the mode. When it's off, results are never released: `resultsReleased()` and `autoReleaseDue()` return false whatever the mode or `results_released_at`, releasing is refused with an error toast, turning it off clears any earlier release, both changes are audit-logged, the results page shows "Change this in Settings" instead of the button, and the dashboard doesn't list the assessment as waiting for release. Students get no results link. The quiz's done page says "You've completed this quiz. Your instructor will grade it." and the assignment page says "You've submitted this assignment. Your instructor will grade it." (green success callout). An old results link shows the same message, with no scores, status or timing. Instructors still see every grade, and the all-scores CSV includes them.
+
 ## Student results page: `/results/{participant:public_id}` (no session needed)
 
 - Not released yet: "Results are not available yet." Shows the submission time only.

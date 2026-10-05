@@ -77,6 +77,7 @@ class AssignmentSubmissionController extends Controller
                 'graded' => $submitted->filter(fn (array $row) => $row['submission']['status'] === 'final')->count(),
             ],
             'release' => [
+                'enabled' => $assignment->release_results,
                 'mode' => $assignment->release_mode->value,
                 'released' => $assignment->resultsReleased(),
                 'released_at' => $assignment->results_released_at?->toIso8601String(),

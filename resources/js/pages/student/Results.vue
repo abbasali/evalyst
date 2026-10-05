@@ -3,6 +3,7 @@ import { Head, usePoll } from '@inertiajs/vue3';
 import { watch } from 'vue';
 import { Clock, Hourglass } from '@lucide/vue';
 import StudentAnswer from '@/components/grading/StudentAnswer.vue';
+import CompletionNotice from '@/components/student/CompletionNotice.vue';
 import Markdown from '@/components/markdown/Markdown.vue';
 import { Badge } from '@/components/ui/badge';
 import StudentLayout from '@/layouts/StudentLayout.vue';
@@ -31,6 +32,7 @@ const props = defineProps<{
     student: { name: string; roll_number: string };
     submittedAt: string | null;
     started: boolean;
+    resultsHidden: boolean;
     released: boolean;
     items: Item[];
     total: number | null;
@@ -44,6 +46,7 @@ const startedAt = Date.now();
 watch(
     () =>
         props.started &&
+        !props.resultsHidden &&
         (!props.released || props.total === null) &&
         Date.now() - startedAt < 30 * 60_000,
     (waiting) => (waiting ? start() : stop()),
@@ -100,20 +103,27 @@ watch(
                 </div>
             </div>
 
+            <CompletionNotice
+                v-if="resultsHidden && submittedAt"
+                message="You've completed this quiz. Your instructor will grade it."
+            />
+
             <div
-                v-if="!released"
+                v-else-if="!released"
                 class="flex flex-col items-center gap-3 rounded-xl border bg-background px-6 py-12 text-center"
             >
                 <Hourglass class="size-8 text-muted-foreground" />
                 <p class="font-medium">
                     {{
-                        started
-                            ? 'Results are not available yet.'
-                            : 'You haven’t taken this quiz.'
+                        !started
+                            ? 'You haven’t taken this quiz.'
+                            : resultsHidden
+                              ? 'You haven’t submitted this quiz yet.'
+                              : 'Results are not available yet.'
                     }}
                 </p>
                 <p
-                    v-if="started"
+                    v-if="started && !resultsHidden"
                     class="max-w-sm text-sm text-muted-foreground"
                 >
                     Your instructor will release them after grading. Keep this

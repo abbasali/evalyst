@@ -55,6 +55,7 @@ const form = useForm<QuizSettingsForm>(
               shuffle_questions: false,
               shuffle_options: false,
               show_answers_after_release: true,
+              release_results: true,
               track_focus: true,
               one_way_navigation: false,
               require_fullscreen: false,
@@ -303,45 +304,77 @@ const releaseChoices = [
 
             <section class="space-y-4 rounded-xl border p-5">
                 <h2 class="font-medium">Results</h2>
-                <div class="grid gap-2 sm:grid-cols-2">
-                    <button
-                        v-for="choice in releaseChoices"
-                        :key="choice.value"
-                        type="button"
-                        :disabled="readOnly"
-                        :class="
-                            cn(
-                                'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed',
-                                form.release_mode === choice.value
-                                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                    : 'hover:bg-muted/50',
-                            )
-                        "
-                        @click="form.release_mode = choice.value"
-                    >
-                        <span class="block text-sm font-medium">
-                            {{ choice.title }} release
-                        </span>
-                        <span class="block text-xs text-muted-foreground">
-                            {{ choice.hint }}
-                        </span>
-                    </button>
-                </div>
                 <label class="flex items-start gap-3">
                     <Checkbox
-                        v-model="form.show_answers_after_release"
+                        v-model="form.release_results"
                         class="mt-0.5"
                         :disabled="readOnly"
                     />
                     <span class="space-y-0.5">
                         <span class="block text-sm font-medium">
-                            Show correct answers and explanations
+                            Release results to students
                         </span>
                         <span class="block text-xs text-muted-foreground">
-                            Students see them with their results, once released.
+                            When this is off, students never see scores or
+                            feedback. After submitting, they're told their
+                            instructor will grade it.
                         </span>
                     </span>
                 </label>
+                <p
+                    v-if="
+                        props.form &&
+                        !props.form.release_results &&
+                        form.release_results &&
+                        form.release_mode === 'automatic'
+                    "
+                    class="text-xs text-amber-700 dark:text-amber-400"
+                >
+                    With automatic release, students see their results as soon
+                    as you save if the quiz has closed.
+                </p>
+                <template v-if="form.release_results">
+                    <div class="grid gap-2 sm:grid-cols-2">
+                        <button
+                            v-for="choice in releaseChoices"
+                            :key="choice.value"
+                            type="button"
+                            :disabled="readOnly"
+                            :class="
+                                cn(
+                                    'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed',
+                                    form.release_mode === choice.value
+                                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                        : 'hover:bg-muted/50',
+                                )
+                            "
+                            @click="form.release_mode = choice.value"
+                        >
+                            <span class="block text-sm font-medium">
+                                {{ choice.title }} release
+                            </span>
+                            <span class="block text-xs text-muted-foreground">
+                                {{ choice.hint }}
+                            </span>
+                        </button>
+                    </div>
+                    <label class="flex items-start gap-3">
+                        <Checkbox
+                            v-model="form.show_answers_after_release"
+                            class="mt-0.5"
+                            :disabled="readOnly"
+                        />
+                        <span class="space-y-0.5">
+                            <span class="block text-sm font-medium">
+                                Show correct answers and explanations
+                            </span>
+                            <span class="block text-xs text-muted-foreground">
+                                Students see them with their results, once
+                                released.
+                            </span>
+                        </span>
+                    </label>
+                </template>
                 <div class="space-y-2">
                     <Label for="auto_publish_threshold">
                         AI auto-publish confidence

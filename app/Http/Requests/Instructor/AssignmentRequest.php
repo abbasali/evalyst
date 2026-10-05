@@ -69,6 +69,7 @@ class AssignmentRequest extends FormRequest
             'show_rules_to_students' => ['boolean'],
             'extra_ignored_paths' => ['array', 'max:50'],
             'extra_ignored_paths.*' => ['string', 'max:200'],
+            'release_results' => ['boolean'],
             'release_mode' => ['required', Rule::enum(ReleaseMode::class)],
             'auto_publish_threshold' => ['nullable', 'numeric', 'between:0.5,1'],
             'access_mode' => ['required', Rule::enum(AccessMode::class)],
@@ -121,6 +122,7 @@ class AssignmentRequest extends FormRequest
     public function assignmentAttributes(): array
     {
         $data = $this->validated();
+        $existing = $this->route('assignment');
         $timezone = $this->courseTimezone();
         $policy = LatePolicy::from($data['late_policy']);
         $penalty = $policy === LatePolicy::Penalty;
@@ -138,6 +140,8 @@ class AssignmentRequest extends FormRequest
             'allow_resubmission' => $this->boolean('allow_resubmission'),
             'show_rules_to_students' => $this->boolean('show_rules_to_students'),
             'extra_ignored_paths' => $data['extra_ignored_paths'] ?: null,
+            // Left out: keep the current value (on for a new one), so hidden results never reappear by accident.
+            'release_results' => $this->boolean('release_results', $existing instanceof Assessment ? $existing->release_results : true),
             'release_mode' => ReleaseMode::from($data['release_mode']),
             'access_mode' => AccessMode::from($data['access_mode']),
             'auto_publish_threshold' => $data['auto_publish_threshold'] !== null ? round((float) $data['auto_publish_threshold'], 2) : null,

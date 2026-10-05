@@ -3,6 +3,7 @@
 use App\Enums\AccessMode;
 use App\Models\Assessment;
 use App\Models\Attempt;
+use App\Models\AuditLog;
 use App\Models\Participant;
 use App\Support\AccessCode;
 
@@ -157,3 +158,20 @@ it('keeps quizzes inside their course', function (string $method, string $route)
     ['get', 'quizzes.access'],
     ['post', 'quizzes.publish'],
 ]);
+
+it('saves whether results are released to students, defaulting to on', function () {
+    [, $team] = actingAsInstructor();
+
+    $this->post(route('quizzes.store', $team), quizPayload())->assertSessionHasNoErrors();
+    $quiz = $team->quizzes()->sole();
+    expect($quiz->release_results)->toBeTrue();
+
+    $quiz->update(['results_released_at' => now()]);
+    $this->put(route('quizzes.update', [$team, $quiz]), quizPayload(['release_results' => false]))->assertSessionHasNoErrors();
+    expect($quiz->fresh())->release_results->toBeFalse()->results_released_at->toBeNull()
+        ->and(AuditLog::pluck('action')->all())->toBe(['results.unrelease', 'results.disable_release']);
+
+    // Leaving the field out keeps results hidden.
+    $this->put(route('quizzes.update', [$team, $quiz]), quizPayload())->assertSessionHasNoErrors();
+    expect($quiz->fresh()->release_results)->toBeFalse();
+});

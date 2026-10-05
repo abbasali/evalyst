@@ -66,6 +66,7 @@ class QuizRequest extends FormRequest
             'track_focus' => ['boolean'],
             'one_way_navigation' => ['boolean'],
             'require_fullscreen' => ['boolean'],
+            'release_results' => ['boolean'],
             'release_mode' => ['required', Rule::enum(ReleaseMode::class)],
             'auto_publish_threshold' => ['nullable', 'numeric', 'between:0.5,1'],
             'access_mode' => ['required', Rule::enum(AccessMode::class)],
@@ -131,6 +132,7 @@ class QuizRequest extends FormRequest
     public function quizAttributes(): array
     {
         $data = $this->validated();
+        $existing = $this->route('quiz');
         $timezone = $this->courseTimezone();
 
         return [
@@ -144,6 +146,8 @@ class QuizRequest extends FormRequest
             'track_focus' => $this->boolean('track_focus'),
             'one_way_navigation' => $this->boolean('one_way_navigation'),
             'require_fullscreen' => $this->boolean('require_fullscreen'),
+            // Left out: keep the current value (on for a new one), so hidden results never reappear by accident.
+            'release_results' => $this->boolean('release_results', $existing instanceof Assessment ? $existing->release_results : true),
             'release_mode' => ReleaseMode::from($data['release_mode']),
             'access_mode' => AccessMode::from($data['access_mode']),
             'auto_publish_threshold' => $data['auto_publish_threshold'] !== null ? round((float) $data['auto_publish_threshold'], 2) : null,

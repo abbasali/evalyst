@@ -24,7 +24,7 @@ import { useCourse } from '@/composables/useCourse';
 import { formatInCourseTz } from '@/lib/datetime';
 import { marks } from '@/lib/grading';
 import { exportMethod } from '@/routes/assessments';
-import { index } from '@/routes/assignments';
+import { edit, index } from '@/routes/assignments';
 import {
     release as releaseRoute,
     unrelease,
@@ -73,6 +73,7 @@ const props = defineProps<
             mode: 'manual' | 'automatic';
             released: boolean;
             released_at: string | null;
+            enabled: boolean;
             can_unrelease: boolean;
         };
         lateOverrides: Option[];
@@ -211,21 +212,33 @@ function toggleRelease() {
             <div
                 class="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
             >
-                <p class="flex items-center gap-2 text-sm font-medium">
-                    <component
-                        :is="release.released ? Eye : EyeOff"
-                        class="size-4"
-                    />
-                    {{
-                        release.released
-                            ? 'Results are visible to students'
-                            : release.mode === 'automatic'
-                              ? 'Results are released automatically after the deadline'
-                              : 'Results are hidden from students'
-                    }}
-                </p>
+                <div class="space-y-0.5 text-sm">
+                    <p class="flex items-center gap-2 font-medium">
+                        <component
+                            :is="release.released ? Eye : EyeOff"
+                            class="size-4"
+                        />
+                        {{
+                            release.released
+                                ? 'Results are visible to students'
+                                : release.enabled &&
+                                    release.mode === 'automatic'
+                                  ? 'Results are released automatically after the deadline'
+                                  : 'Results are hidden from students'
+                        }}
+                    </p>
+                    <p v-if="!release.enabled" class="text-muted-foreground">
+                        Change this in
+                        <Link
+                            :href="edit(args)"
+                            class="underline underline-offset-4"
+                            >Settings</Link
+                        >.
+                    </p>
+                </div>
                 <Button
                     v-if="
+                        release.enabled &&
                         assignment.state !== 'draft' &&
                         (!release.released || release.can_unrelease)
                     "

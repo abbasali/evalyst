@@ -104,6 +104,7 @@ class AssignmentController extends Controller
                 'allow_resubmission' => $assignment->allow_resubmission,
                 'show_rules_to_students' => $assignment->show_rules_to_students,
                 'extra_ignored_paths' => implode("\n", $assignment->extra_ignored_paths ?? []),
+                'release_results' => $assignment->release_results,
                 'release_mode' => $assignment->release_mode->value,
                 'auto_publish_threshold' => $assignment->auto_publish_threshold !== null ? (float) $assignment->auto_publish_threshold : '',
                 'access_mode' => $assignment->access_mode->value,

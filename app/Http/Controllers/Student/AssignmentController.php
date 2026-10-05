@@ -63,7 +63,8 @@ class AssignmentController extends Controller
                 'minutes_late' => $submission->minutes_late,
                 'is_current' => $submission->is_current,
             ]),
-            'resultsUrl' => route('student.results', $participant->public_id),
+            // No results link when the instructor doesn't release results to students.
+            'resultsUrl' => $assessment->release_results ? route('student.results', $participant->public_id) : null,
         ]);
     }
 

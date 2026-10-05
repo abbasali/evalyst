@@ -15,7 +15,7 @@ import { formatInCourseTz } from '@/lib/datetime';
 import { marks } from '@/lib/grading';
 import { exportMethod } from '@/routes/assessments';
 import { show as attemptShow } from '@/routes/attempts';
-import { index } from '@/routes/quizzes';
+import { edit, index } from '@/routes/quizzes';
 import { release as releaseRoute, unrelease } from '@/routes/quizzes/results';
 import { index as reviewIndex } from '@/routes/review';
 import type { QuizShellProps, Team } from '@/types';
@@ -49,6 +49,7 @@ const props = defineProps<
             mode: 'manual' | 'automatic';
             released: boolean;
             released_at: string | null;
+            enabled: boolean;
             can_unrelease: boolean;
             show_answers: boolean;
         };
@@ -170,8 +171,16 @@ function toggleRelease() {
                         }}
                     </p>
                     <p class="text-muted-foreground">
+                        <template v-if="!release.enabled">
+                            Change this in
+                            <Link
+                                :href="edit(args)"
+                                class="underline underline-offset-4"
+                                >Settings</Link
+                            >.
+                        </template>
                         <template
-                            v-if="
+                            v-else-if="
                                 release.mode === 'automatic' &&
                                 !release.released
                             "
@@ -212,6 +221,7 @@ function toggleRelease() {
                     </Button>
                     <Button
                         v-if="
+                            release.enabled &&
                             quiz.state !== 'draft' &&
                             (!release.released || release.can_unrelease)
                         "

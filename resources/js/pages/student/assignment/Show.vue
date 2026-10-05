@@ -12,6 +12,7 @@ import {
 import { useIntervalFn } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import CopyButton from '@/components/CopyButton.vue';
+import CompletionNotice from '@/components/student/CompletionNotice.vue';
 import InputError from '@/components/InputError.vue';
 import Markdown from '@/components/markdown/Markdown.vue';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +48,7 @@ const props = defineProps<{
         minutes_late: number;
         is_current: boolean;
     }[];
-    resultsUrl: string;
+    resultsUrl: string | null;
 }>();
 
 const time = (iso: string | null) =>
@@ -212,7 +213,12 @@ function lateLabel(minutes: number): string {
                     {{ canSubmit.reason }}
                 </p>
 
-                <div class="space-y-1 border-t pt-3">
+                <div v-if="!resultsUrl && current" class="border-t pt-3">
+                    <CompletionNotice
+                        message="You've submitted this assignment. Your instructor will grade it."
+                    />
+                </div>
+                <div v-else-if="resultsUrl" class="space-y-1 border-t pt-3">
                     <p class="text-xs font-medium text-muted-foreground">
                         Your results link
                     </p>

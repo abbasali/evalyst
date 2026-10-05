@@ -22,6 +22,7 @@ A project students build at home. Each student submits a public GitHub repo URL 
 | Show rules to students                            | bool, default on                                                         |
 | Extra ignored paths                               | list of globs, optional                                                  |
 | Access mode, release mode, auto-publish threshold | same as quizzes                                                          |
+| Release results to students                       | same as quizzes                                                          |
 
 Next to the late policy fields, a live summary in plain English shows what students will see, for example: "Late submissions are accepted until 10 Oct 23:59. 2 marks are deducted for each started day late, up to 10 marks."
 

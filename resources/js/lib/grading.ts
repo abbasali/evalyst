@@ -54,6 +54,8 @@ export function auditActionLabel(action: string): string {
         'attempt.force_submit': 'Submitted the attempt',
         'results.release': 'Released results',
         'results.unrelease': 'Hid results',
+        'results.enable_release': 'Turned on releasing results to students',
+        'results.disable_release': 'Turned off releasing results to students',
         'participant.override': 'Changed deadline or penalty',
         'submission.regrade': 'Regraded the submission',
         'submission.override': 'Changed rule scores',
