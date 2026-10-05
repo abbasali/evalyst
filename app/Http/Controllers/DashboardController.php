@@ -75,8 +75,9 @@ class DashboardController extends Controller
         $upcoming = $team->assessments()->inState('upcoming')->where('opens_at', '<=', now()->addDays(14))
             ->withCount('participants')->orderBy('opens_at')->limit(5)->get()->map($row);
         // Closed with results still hidden: manual mode, or automatic mode held back (a student is
-        // still mid-attempt, or a personal deadline hasn't passed).
+        // still mid-attempt, or a personal deadline hasn't passed). Skips ones never released to students.
         $unreleased = $team->assessments()->inState('closed')->withCount($counts)
+            ->where('release_results', true)
             ->whereNull('results_released_at')
             ->latest('closes_at')
             ->limit(10)

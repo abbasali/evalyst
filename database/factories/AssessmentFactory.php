@@ -63,6 +63,11 @@ class AssessmentFactory extends Factory
         ]);
     }
 
+    public function resultsHidden(): static
+    {
+        return $this->state(['release_results' => false]);
+    }
+
     public function draft(): static
     {
         return $this->state(['status' => AssessmentStatus::Draft]);

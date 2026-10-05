@@ -41,6 +41,7 @@ class ResultsController extends Controller
             'student' => ['name' => $participant->student->name, 'roll_number' => $participant->student->roll_number],
             'submittedAt' => $attempt?->submitted_at?->toIso8601String(),
             'started' => $attempt !== null,
+            'resultsHidden' => ! $assessment->release_results,
             'released' => $released,
             'items' => $items,
             'total' => $allPublished ? round($items->sum('score'), 2) : null,
@@ -68,6 +69,7 @@ class ResultsController extends Controller
                 'short_sha' => $submission->shortSha(),
                 'commit_url' => $submission->commitUrl(),
             ] : null,
+            'resultsHidden' => ! $assessment->release_results,
             'released' => $released,
             'published' => $published,
             'grade' => $published ? [

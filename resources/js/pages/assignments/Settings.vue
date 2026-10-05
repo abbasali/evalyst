@@ -31,6 +31,7 @@ type SettingsForm = {
     allow_resubmission: boolean;
     show_rules_to_students: boolean;
     extra_ignored_paths: string;
+    release_results: boolean;
     release_mode: 'manual' | 'automatic';
     auto_publish_threshold: number | '';
     access_mode: 'roster' | 'shared_code';
@@ -79,6 +80,7 @@ const form = useForm<SettingsForm>(
               allow_resubmission: true,
               show_rules_to_students: true,
               extra_ignored_paths: '',
+              release_results: true,
               release_mode: 'manual',
               auto_publish_threshold: '',
               access_mode: 'roster',
@@ -411,30 +413,61 @@ const releaseChoices = [
                         </span>
                     </span>
                 </label>
-                <div class="grid gap-2 sm:grid-cols-2">
-                    <button
-                        v-for="choice in releaseChoices"
-                        :key="choice.value"
-                        type="button"
+                <label class="flex items-start gap-3">
+                    <Checkbox
+                        v-model="form.release_results"
+                        class="mt-0.5"
                         :disabled="readOnly"
-                        :class="
-                            cn(
-                                'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed',
-                                form.release_mode === choice.value
-                                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                    : 'hover:bg-muted/50',
-                            )
-                        "
-                        @click="form.release_mode = choice.value"
-                    >
+                    />
+                    <span class="space-y-0.5">
                         <span class="block text-sm font-medium">
-                            {{ choice.title }} release
+                            Release results to students
                         </span>
                         <span class="block text-xs text-muted-foreground">
-                            {{ choice.hint }}
+                            When this is off, students never see scores or
+                            feedback. After submitting, they're told their
+                            instructor will grade it.
                         </span>
-                    </button>
-                </div>
+                    </span>
+                </label>
+                <p
+                    v-if="
+                        props.form &&
+                        !props.form.release_results &&
+                        form.release_results &&
+                        form.release_mode === 'automatic'
+                    "
+                    class="text-xs text-amber-700 dark:text-amber-400"
+                >
+                    With automatic release, students see their results as soon
+                    as you save if the deadline has passed.
+                </p>
+                <template v-if="form.release_results">
+                    <div class="grid gap-2 sm:grid-cols-2">
+                        <button
+                            v-for="choice in releaseChoices"
+                            :key="choice.value"
+                            type="button"
+                            :disabled="readOnly"
+                            :class="
+                                cn(
+                                    'rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed',
+                                    form.release_mode === choice.value
+                                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                        : 'hover:bg-muted/50',
+                                )
+                            "
+                            @click="form.release_mode = choice.value"
+                        >
+                            <span class="block text-sm font-medium">
+                                {{ choice.title }} release
+                            </span>
+                            <span class="block text-xs text-muted-foreground">
+                                {{ choice.hint }}
+                            </span>
+                        </button>
+                    </div>
+                </template>
                 <div class="space-y-2">
                     <Label for="auto_publish_threshold">
                         AI auto-publish confidence

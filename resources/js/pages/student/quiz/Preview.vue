@@ -41,6 +41,7 @@ const props = defineProps<{
         duration_minutes: number;
         one_way_navigation: boolean;
         require_fullscreen: boolean;
+        release_results: boolean;
     };
     questions: StudentQuestion[];
     serverNow: string;
@@ -221,8 +222,11 @@ function go(target: number) {
                 <DialogHeader>
                     <DialogTitle>Preview — nothing saved</DialogTitle>
                     <DialogDescription>
-                        Students would now see a confirmation page with their
-                        results link.
+                        {{
+                            quiz.release_results
+                                ? 'Students would now see a confirmation page with their results link.'
+                                : 'Students would now see a confirmation page saying their instructor will grade it.'
+                        }}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">

@@ -2,6 +2,7 @@
 import { Head, usePoll } from '@inertiajs/vue3';
 import { watch } from 'vue';
 import { Clock, GitCommitHorizontal, Hourglass } from '@lucide/vue';
+import CompletionNotice from '@/components/student/CompletionNotice.vue';
 import StudentLayout from '@/layouts/StudentLayout.vue';
 import { formatInCourseTz } from '@/lib/datetime';
 import { marks } from '@/lib/grading';
@@ -14,6 +15,7 @@ const props = defineProps<{
         short_sha: string;
         commit_url: string;
     } | null;
+    resultsHidden: boolean;
     released: boolean;
     published: boolean;
     grade: {
@@ -47,6 +49,7 @@ const startedAt = Date.now();
 watch(
     () =>
         !!props.submission &&
+        !props.resultsHidden &&
         !props.published &&
         Date.now() - startedAt < 30 * 60_000,
     (waiting) => (waiting ? start() : stop()),
@@ -110,8 +113,13 @@ watch(
                 </div>
             </div>
 
+            <CompletionNotice
+                v-if="resultsHidden && submission"
+                message="You've submitted this assignment. Your instructor will grade it."
+            />
+
             <div
-                v-if="!grade"
+                v-else-if="!grade"
                 class="flex flex-col items-center gap-3 rounded-xl border bg-background px-6 py-12 text-center"
             >
                 <component

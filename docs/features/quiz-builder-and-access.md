@@ -21,6 +21,7 @@ Create a timed quiz from bank questions, set when it runs, and choose how studen
 | Duration (minutes)                                  | required, 1–600                                                               |
 | Shuffle questions / shuffle options                 | bool, default off                                                             |
 | Track focus loss                                    | bool, default on                                                              |
+| Release results to students                         | bool, default on. Off hides the two rows below                                |
 | Release mode                                        | `manual` (default) or `automatic`                                             |
 | Show correct answers and explanations after release | bool, default on                                                              |
 | Auto-publish threshold                              | optional 0.50–1.00. Empty = config default (0.80). Help text explains it      |

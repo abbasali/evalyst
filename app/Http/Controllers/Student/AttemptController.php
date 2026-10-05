@@ -157,7 +157,8 @@ class AttemptController extends Controller
             'submittedAt' => $attempt->submitted_at?->toIso8601String(),
             'autoSubmitted' => $attempt->auto_submitted,
             'timezone' => $participant->assessment->team->timezone,
-            'resultsUrl' => route('student.results', $participant->public_id),
+            // No results link when the instructor doesn't release results to students.
+            'resultsUrl' => $participant->assessment->release_results ? route('student.results', $participant->public_id) : null,
         ]);
     }
 

@@ -61,6 +61,7 @@ class QuizResultsController extends Controller
                 'average' => $graded->isEmpty() ? null : round((float) $graded->avg('score'), 2),
             ],
             'release' => [
+                'enabled' => $quiz->release_results,
                 'mode' => $quiz->release_mode->value,
                 'released' => $quiz->resultsReleased(),
                 'released_at' => $quiz->results_released_at?->toIso8601String(),
@@ -74,6 +75,12 @@ class QuizResultsController extends Controller
     {
         // Also allowed in automatic mode, to release early.
         abort_if($quiz->isDraft(), 422);
+
+        if (! $quiz->release_results) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Releasing results to students is turned off. Turn it on in Settings first.')]);
+
+            return back();
+        }
 
         // Submit abandoned attempts now rather than relying on the expiry job having run.
         if ($quiz->isQuiz()) {

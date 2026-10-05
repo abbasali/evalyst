@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import { BarChart3, CheckCircle2 } from '@lucide/vue';
 import { onMounted } from 'vue';
 import CopyButton from '@/components/CopyButton.vue';
+import CompletionNotice from '@/components/student/CompletionNotice.vue';
 import { Button } from '@/components/ui/button';
 import StudentLayout from '@/layouts/StudentLayout.vue';
 import { formatInCourseTz } from '@/lib/datetime';
@@ -11,7 +12,7 @@ const props = defineProps<{
     submittedAt: string | null;
     autoSubmitted: boolean;
     timezone: string;
-    resultsUrl: string;
+    resultsUrl: string | null;
 }>();
 
 onMounted(() => {
@@ -47,7 +48,12 @@ onMounted(() => {
                 </p>
             </div>
 
+            <CompletionNotice
+                v-if="!resultsUrl"
+                message="You've completed this quiz. Your instructor will grade it."
+            />
             <div
+                v-else
                 class="space-y-2 rounded-xl border bg-background p-5 text-left"
             >
                 <p class="text-sm font-medium">Your results link</p>
