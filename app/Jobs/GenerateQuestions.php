@@ -48,7 +48,7 @@ class GenerateQuestions implements ShouldQueue
 
     public function __construct(public QuestionGeneration $generation)
     {
-        $this->onQueue('ai');
+        $this->onQueue(config('evalyst.ai.queue'));
     }
 
     public function retryUntil(): DateTimeInterface

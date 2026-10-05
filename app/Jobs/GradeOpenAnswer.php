@@ -48,7 +48,7 @@ class GradeOpenAnswer implements ShouldQueue
 
     public function __construct(public int $answerId)
     {
-        $this->onQueue('ai');
+        $this->onQueue(config('evalyst.ai.queue'));
     }
 
     /**

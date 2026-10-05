@@ -22,7 +22,7 @@ description: Build or change Evalyst AI features — Laravel AI SDK agents (Ques
 
 ## Shape of every AI job
 
-- Runs on the `ai` queue with `RateLimited('openai')` middleware, `tries = 3`, `backoff = [30, 120, 300]`, and a timeout from 03-ai.md.
+- Runs on `config('evalyst.ai.queue')` (default `ai`) with `RateLimited('openai')` middleware, `tries = 3`, `backoff = [30, 120, 300]`, and a timeout from 03-ai.md.
 - Idempotent: return early if the subject is no longer `pending` / `grading`.
 - Wrap the prompt call in `RecordsAiRun`, which writes an `ai_runs` row (purpose, subject, model, tokens, `cost_usd`, `duration_ms`, `succeeded`, error) on success **and** on failure.
 - Validate the output before using it. A score outside `[0, max]`, a missing rule id, or a wrong count means the output is invalid, and the item fails closed (`needs_review` or `failed`).

@@ -54,7 +54,7 @@ class GradeSubmission implements ShouldQueue
 
     public function __construct(public int $submissionId)
     {
-        $this->onQueue('ai');
+        $this->onQueue(config('evalyst.ai.queue'));
     }
 
     public function retryUntil(): DateTimeInterface

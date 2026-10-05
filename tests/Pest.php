@@ -188,13 +188,15 @@ function fakeRepository(): void
  */
 function gradableSubmission(array $submission = []): array
 {
+    // One timestamp, so the submission is exactly one day late (a second more would round up to two).
+    $now = now()->startOfSecond();
     $assignment = Assessment::factory()->assignment()->published()->create([
-        'closes_at' => now()->subDays(2),
+        'closes_at' => $now->copy()->subDays(2),
         'late_policy' => LatePolicy::Penalty, 'penalty_type' => PenaltyType::PerDay, 'penalty_value' => 2,
     ]);
     AssignmentRule::factory()->automated(AutomatedCheck::PathAbsent, ['glob' => 'vendor/**'])->for($assignment, 'assessment')->create(['marks' => 2, 'position' => 1]);
     $ai = AssignmentRule::factory()->ai()->for($assignment, 'assessment')->create(['marks' => 8, 'position' => 2]);
     $participant = Participant::factory()->for($assignment)->create();
 
-    return [Submission::factory()->for($participant)->create(['submitted_at' => now()->subDay(), 'max_score' => 10, ...$submission]), $ai];
+    return [Submission::factory()->for($participant)->create(['submitted_at' => $now->copy()->subDay(), 'max_score' => 10, ...$submission]), $ai];
 }

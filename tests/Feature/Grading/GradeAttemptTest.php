@@ -50,6 +50,16 @@ test('non-blank open answers are queued once each and the attempt waits in gradi
     Queue::assertPushedOn('ai', GradeOpenAnswer::class);
 });
 
+test('AI jobs go to the configured queue', function () {
+    Queue::fake();
+    config(['evalyst.ai.queue' => 'default']);
+    $attempt = submittedAttempt(['open_text' => ['text_answer' => 'It maps values.']]);
+
+    app(GradeAttempt::class)->handle($attempt);
+
+    Queue::assertPushedOn('default', GradeOpenAnswer::class);
+});
+
 test('an attempt still in progress is not graded', function () {
     Queue::fake();
     $attempt = submittedAttempt();
