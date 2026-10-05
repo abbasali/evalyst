@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\AttemptStatus;
 use App\Enums\SubmissionStatus;
 use App\Models\Assessment;
 use App\Models\Participant;
 use App\Models\Student;
 use App\Models\Submission;
+use App\Models\Team;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 test('the quiz export lists every participant with per-question scores', function () {
@@ -46,4 +48,29 @@ test('scores of unreleased results stay out of the gradebook', function () {
     $lines = explode("\n", trim($this->get(route('gradebook', $team))->streamedContent()));
 
     expect(str_getcsv($lines[2])[2])->toBe('');
+});
+
+test('the scores export includes unreleased grades but not ones still in review', function () {
+    [, $team] = actingAsInstructor();
+    // Graded but neither published nor released (the quiz is still open).
+    $attempt = submittedAttempt([], ['team_id' => $team->id, 'title' => 'Quiz 1']);
+    $attempt->update(['status' => AttemptStatus::Graded, 'score' => 4.5]);
+    $student = $attempt->participant->student;
+    $student->update(['roll_number' => 'R1']);
+    $assignment = Assessment::factory()->assignment()->published()->for($team)->create(['title' => 'Blog', 'closes_at' => now()->addWeek()]);
+    $other = Student::factory()->for($team)->create(['roll_number' => 'R2']);
+    Submission::factory()->for(Participant::factory()->for($assignment)->for($student))->graded(8)->create(['published_at' => null]);
+    Submission::factory()->for(Participant::factory()->for($assignment)->for($other))->create(['status' => SubmissionStatus::NeedsReview, 'score' => 5]);
+
+    $lines = explode("\n", trim($this->get(route('scores', $team))->streamedContent()));
+
+    expect(str_getcsv($lines[1]))->toBe(['roll_number', 'name', 'Quiz 1 (quiz)', 'Blog (assignment)', 'total'])
+        ->and(array_slice(str_getcsv($lines[2]), 2))->toBe(['4.5', '8', '12.5'])
+        ->and(array_slice(str_getcsv($lines[3]), 2))->toBe(['', '', '0']);
+});
+
+test('another course\'s scores cannot be exported', function () {
+    actingAsInstructor();
+
+    $this->get(route('scores', Team::factory()->create()))->assertForbidden();
 });

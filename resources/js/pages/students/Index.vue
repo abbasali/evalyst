@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { useCourse } from '@/composables/useCourse';
-import { gradebook } from '@/routes';
+import { gradebook, scores } from '@/routes';
 import { destroy, index } from '@/routes/students';
 import type { Paginated, Student, Team } from '@/types';
 
@@ -103,9 +103,35 @@ function remove() {
             description="Your course roster. Students join assessments with access codes — no accounts needed."
         >
             <template #actions>
-                <Button v-if="total > 0" variant="outline" as-child>
-                    <a :href="gradebook.url(slug)"><Download /> Gradebook</a>
-                </Button>
+                <DropdownMenu v-if="total > 0">
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="outline"><Download /> Export</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="w-64">
+                        <DropdownMenuItem as-child>
+                            <a
+                                :href="scores.url(slug)"
+                                class="flex-col items-start gap-0.5"
+                            >
+                                <span>All scores</span>
+                                <span class="text-xs text-muted-foreground">
+                                    Every finished grade, released or not
+                                </span>
+                            </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem as-child>
+                            <a
+                                :href="gradebook.url(slug)"
+                                class="flex-col items-start gap-0.5"
+                            >
+                                <span>Gradebook</span>
+                                <span class="text-xs text-muted-foreground">
+                                    Only scores students can see
+                                </span>
+                            </a>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <Button variant="outline" @click="importOpen = true">
                     <Upload /> Import CSV
                 </Button>
@@ -151,6 +177,9 @@ function remove() {
                             >
                                 Email
                             </th>
+                            <th class="px-4 py-3 text-right font-medium">
+                                Total score
+                            </th>
                             <th class="w-12 px-4 py-3">
                                 <span class="sr-only">Actions</span>
                             </th>
@@ -172,6 +201,16 @@ function remove() {
                                 class="hidden px-4 py-3 text-muted-foreground sm:table-cell"
                             >
                                 {{ student.email ?? '—' }}
+                            </td>
+                            <td class="px-4 py-3 text-right tabular-nums">
+                                <span
+                                    v-if="student.total_score === null"
+                                    class="text-muted-foreground"
+                                    >—</span
+                                >
+                                <template v-else>{{
+                                    student.total_score
+                                }}</template>
                             </td>
                             <td class="px-2 py-2 text-right">
                                 <DropdownMenu>
@@ -203,7 +242,7 @@ function remove() {
                         </tr>
                         <tr v-if="students.data.length === 0">
                             <td
-                                colspan="4"
+                                colspan="5"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{

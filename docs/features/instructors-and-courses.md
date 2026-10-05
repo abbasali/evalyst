@@ -58,7 +58,7 @@ Screen: `settings/teams/{team}` (the starter kit's Edit page), relabelled "Cours
 
 A course-level roster (D-011). Screen: `/{course}/students`.
 
-- **Index:** search by name or roll number, paginated 50 per page. Columns: roll number, name, email, number of assessments taken.
+- **Index:** search by name or roll number, paginated 25 per page. Columns: roll number, name, email, total score (the sum of graded scores across published and archived assessments, released or not; `—` when nothing is graded yet). An **Export** menu offers the all-scores CSV and the gradebook (see results-and-exports.md).
 - **Create/edit form:**
     - name: required, max 100
     - roll_number: required, max 50, trimmed, **unique per course**

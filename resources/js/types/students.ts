@@ -3,6 +3,7 @@ export type Student = {
     name: string;
     roll_number: string;
     email: string | null;
+    total_score?: number | null;
 };
 
 export type StudentImportRow = {

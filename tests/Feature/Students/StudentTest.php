@@ -1,6 +1,12 @@
 <?php
 
+use App\Enums\AttemptStatus;
+use App\Enums\SubmissionStatus;
+use App\Models\Assessment;
+use App\Models\Attempt;
+use App\Models\Participant;
 use App\Models\Student;
+use App\Models\Submission;
 use App\Models\Team;
 use Illuminate\Http\UploadedFile;
 
@@ -17,6 +23,22 @@ test('students can be listed and searched', function () {
             ->has('students.data', 1)
             ->where('students.data.0.roll_number', 'CS-001')
             ->where('total', 2));
+});
+
+test('the roster shows each student\'s total graded score', function () {
+    [, $team] = actingAsInstructor();
+    $quiz = Assessment::factory()->quiz()->published()->for($team)->create();
+    $assignment = Assessment::factory()->assignment()->published()->for($team)->create();
+    $student = Student::factory()->for($team)->create(['roll_number' => 'CS-001']);
+    $other = Student::factory()->for($team)->create(['roll_number' => 'CS-002']);
+    Attempt::factory()->for(Participant::factory()->for($quiz)->for($student))->create(['status' => AttemptStatus::Graded, 'score' => 4.5]);
+    Submission::factory()->for(Participant::factory()->for($assignment)->for($student))->graded(8)->create();
+    Submission::factory()->for(Participant::factory()->for($assignment)->for($other))->create(['status' => SubmissionStatus::NeedsReview, 'score' => 5]);
+
+    $this->get(route('students.index', $team))
+        ->assertInertia(fn ($page) => $page
+            ->where('students.data.0.total_score', 12.5)
+            ->where('students.data.1.total_score', null));
 });
 
 test('a student can be added, edited and deleted', function () {

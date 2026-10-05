@@ -202,3 +202,7 @@ _Why:_ the author's Laravel Cloud plan includes only one managed queue.
 **D-035 — `aws/aws-sdk-php` for Laravel Cloud** · 2026-10-05
 Added `aws/aws-sdk-php`, because Laravel Cloud's Managed Queues (SQS) need it. Locally and in tests the queue stays on `database`/`sync`, so the SDK is only used in production. It also installs `aws/aws-crt-php`, `mtdowling/jmespath.php` and `symfony/filesystem`.
 _Why:_ deployment to Laravel Cloud (M12); approved by the author.
+
+**D-036 — Student totals and an all-scores export** · 2026-10-05
+The Students page shows each student's total score, and a new `scores.csv` has the gradebook's layout (roll number, name, one column per published or archived assessment, total). Both count every finished grade (quiz attempt `graded`, current submission `final`) whether or not results are released or published. Scores in review or still grading are left out. A student with nothing graded shows `—` on the page, while both CSVs write a total of `0` (as the gradebook already did) so spreadsheets get a number. The gradebook still shows only what students can see. Both read scores through `App\Grading\ParticipantScore`.
+_Why:_ instructors want to see standings right after an assessment, before releasing results.
