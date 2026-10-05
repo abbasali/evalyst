@@ -24,7 +24,7 @@ withDefaults(
             id="name"
             name="name"
             :default-value="name"
-            placeholder="e.g. PHP & Laravel — Batch 12"
+            placeholder="e.g. Web Development — Batch 12"
             required
             maxlength="100"
         />

@@ -42,3 +42,6 @@ yarn-error.log
 /boost.json
 /opencode.json
 /opencode.jsonc
+
+# Laravel Cloud CLI: org, app and environment IDs stay local
+/.cloud

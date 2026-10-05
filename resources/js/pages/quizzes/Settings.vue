@@ -152,7 +152,7 @@ const releaseChoices = [
                         v-model="form.title"
                         v-focus="!quiz"
                         maxlength="150"
-                        placeholder="Week 3 — Eloquent relationships"
+                        placeholder="Week 3 — Loops and functions"
                         :disabled="readOnly"
                     />
                     <InputError :message="errors.title" />

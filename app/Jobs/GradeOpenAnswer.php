@@ -10,6 +10,7 @@ use App\Ai\Validation\InvalidAiOutput;
 use App\Ai\Validation\OpenAnswerResultValidator;
 use App\Enums\AiRunPurpose;
 use App\Enums\AnswerGradingStatus;
+use App\Enums\CodeLanguage;
 use App\Enums\QuestionType;
 use App\Grading\AiGradeResult;
 use App\Grading\PublishGate;
@@ -109,7 +110,7 @@ class GradeOpenAnswer implements ShouldQueue
     private function askAi(RecordsAiRun $runs, OpenAnswerResultValidator $validator, Answer $answer): ?AiGradeResult
     {
         $question = $answer->question;
-        $language = $question->type === QuestionType::OpenCode ? ($question->code_language->value ?? 'php') : null;
+        $language = $question->type === QuestionType::OpenCode ? ($question->code_language->value ?? CodeLanguage::PlainText->value) : null;
 
         $agent = new OpenAnswerGrader(
             question: $question->body,

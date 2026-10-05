@@ -91,17 +91,17 @@ const checkMeta: Record<
         help: 'The share of commit messages that must match. Partial credit up to that share.',
     },
     path_exists: {
-        defaults: { glob: 'tests/Feature/*Test.php', min_matches: 1 },
+        defaults: { glob: 'tests/**', min_matches: 1 },
         help: 'Checked against every file in the repo.',
     },
     path_absent: {
-        defaults: { glob: 'vendor/**' },
-        help: 'Catches committed junk such as vendor/ or .env.',
+        defaults: { glob: 'node_modules/**' },
+        help: 'Catches committed junk such as node_modules/, vendor/ or .env.',
     },
     file_contains: {
         defaults: {
-            glob: 'app/Http/Requests/*.php',
-            pattern: 'function rules',
+            glob: 'README*',
+            pattern: 'Install',
         },
         help: 'Passes when at least one matching file contains the pattern (a regular expression).',
     },
@@ -320,7 +320,7 @@ const fieldError = (index: number, field: string) =>
                             :id="`description-${rule.key}`"
                             v-model="rule.description as string"
                             rows="3"
-                            placeholder="Every store/update action validates input with a Form Request class."
+                            placeholder="All user input is validated before it is saved or used."
                             :disabled="!canEdit"
                         />
                         <InputError :message="fieldError(i, 'description')" />
@@ -403,8 +403,9 @@ const fieldError = (index: number, field: string) =>
                                 >
                                     <button
                                         v-for="glob in [
-                                            'vendor/**',
                                             'node_modules/**',
+                                            'vendor/**',
+                                            '__pycache__/**',
                                             '.env',
                                         ]"
                                         :key="glob"

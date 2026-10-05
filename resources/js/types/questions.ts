@@ -53,6 +53,7 @@ export type QuestionFormOptions = {
     difficulties: Option[];
     scoringPolicies: Option[];
     codeLanguages: Option[];
+    defaultCodeLanguage: string;
     tags: TagSummary[];
 };
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CodeLanguage;
 use App\Enums\QuestionType;
 use App\Models\Question;
 use App\Models\Tag;
@@ -173,4 +174,15 @@ test('deleted questions can be previewed', function () {
     $question->delete();
 
     $this->getJson(route('questions.show', [$team, $question]))->assertOk()->assertJsonPath('deleted', true);
+});
+
+test('new code questions default to the language last used in the course', function () {
+    [, $team] = actingAsInstructor();
+
+    $this->get(route('questions.create', $team))->assertInertia(fn ($page) => $page->where('defaultCodeLanguage', 'plaintext'));
+
+    Question::factory()->for($team)->openCode()->create(['code_language' => CodeLanguage::Python]);
+    Question::factory()->openCode()->create(['code_language' => CodeLanguage::Go]);
+
+    $this->get(route('questions.create', $team))->assertInertia(fn ($page) => $page->where('defaultCodeLanguage', 'python'));
 });

@@ -40,7 +40,7 @@ teams (Course) ─┬─< team_members >── users (Instructor)
 | `ChoiceScoringPolicy` | `all_or_nothing`, `partial`, `partial_with_penalty`                                                                             |
 | `Difficulty`          | `easy`, `medium`, `hard`                                                                                                        |
 | `QuestionSource`      | `manual`, `ai`                                                                                                                  |
-| `CodeLanguage`        | `php`, `blade`, `javascript`, `typescript`, `sql`, `html`, `css`, `bash`, `json`, `plaintext`                                   |
+| `CodeLanguage`        | `bash`, `blade`, `c`, `csharp`, `cpp`, `css`, `go`, `html`, `java`, `javascript`, `json`, `kotlin`, `php`, `python`, `ruby`, `rust`, `sql`, `swift`, `typescript`, `plaintext` |
 | `GenerationStatus`    | `pending`, `running`, `completed`, `failed`                                                                                     |
 | `AssessmentType`      | `quiz`, `assignment`                                                                                                            |
 | `AssessmentStatus`    | `draft`, `published`, `archived` (whether it is open/closed is worked out from dates, see below)                                |

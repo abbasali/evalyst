@@ -79,11 +79,19 @@ class RepositoryIngestor
 
     public static function priority(string $path): int
     {
+        // Works across ecosystems: project manifests first, then source, then views/assets, then tests.
         $groups = [
-            1 => ['README*', 'readme*', 'composer.json', 'package.json'],
-            2 => ['routes/**', 'app/**', 'database/migrations/**', 'config/*.php'],
-            3 => ['resources/views/**', 'resources/js/**', 'resources/css/**'],
-            4 => ['tests/**', 'database/seeders/**', 'database/factories/**'],
+            1 => [
+                'README*', 'readme*', 'composer.json', 'package.json', 'requirements*.txt', 'pyproject.toml', 'Pipfile',
+                'go.mod', 'Cargo.toml', 'pom.xml', 'build.gradle*', 'settings.gradle*', 'Gemfile', '*.csproj', '*.sln',
+                'CMakeLists.txt', 'Makefile', 'Package.swift', 'manage.py',
+            ],
+            2 => [
+                'src/**', 'app/**', 'lib/**', 'cmd/**', 'internal/**', 'pkg/**', 'routes/**', 'config/**',
+                'database/migrations/**', 'migrations/**', '*.py', '*.go', '*.rb', '*.java', '*.c', '*.cpp', '*.cs', '*.rs', '*.js', '*.ts', '*.php',
+            ],
+            3 => ['resources/**', 'templates/**', 'views/**', 'components/**', 'pages/**', 'static/**', 'public/**', '*.html', '*.css'],
+            4 => ['tests/**', 'test/**', 'spec/**', '__tests__/**', 'database/seeders/**', 'database/factories/**'],
         ];
 
         foreach ($groups as $group => $globs) {
