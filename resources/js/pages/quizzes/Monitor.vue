@@ -4,6 +4,7 @@ import {
     AlertTriangle,
     Clipboard,
     Eye,
+    EyeOff,
     Maximize,
     MoreHorizontal,
     RotateCcw,
@@ -193,6 +194,8 @@ function doReset() {
 }
 
 const flagged = (count: number) => count >= props.alertAt;
+
+const showScores = ref(false);
 </script>
 
 <template>
@@ -218,19 +221,31 @@ const flagged = (count: number) => count >= props.alertAt;
                     </p>
                 </div>
             </div>
-            <p class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span
-                    :class="
-                        cn(
-                            'size-2 rounded-full',
-                            live
-                                ? 'animate-pulse bg-emerald-500'
-                                : 'bg-muted-foreground/40',
-                        )
-                    "
-                />
-                {{ live ? 'Live — updates every 5 seconds' : 'Not live' }}
-            </p>
+            <div class="flex items-center gap-3">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    @click="showScores = !showScores"
+                >
+                    <component :is="showScores ? EyeOff : Eye" />
+                    {{ showScores ? 'Hide scores' : 'Show scores' }}
+                </Button>
+                <p
+                    class="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                    <span
+                        :class="
+                            cn(
+                                'size-2 rounded-full',
+                                live
+                                    ? 'animate-pulse bg-emerald-500'
+                                    : 'bg-muted-foreground/40',
+                            )
+                        "
+                    />
+                    {{ live ? 'Live — updates every 5 seconds' : 'Not live' }}
+                </p>
+            </div>
         </div>
 
         <EmptyState
@@ -254,7 +269,12 @@ const flagged = (count: number) => count >= props.alertAt;
                         <th class="px-4 py-3 font-medium">Status</th>
                         <th class="px-4 py-3 font-medium">Progress</th>
                         <th class="px-4 py-3 font-medium">Time left</th>
-                        <th class="px-4 py-3 text-right font-medium">Score</th>
+                        <th
+                            v-if="showScores"
+                            class="px-4 py-3 text-right font-medium"
+                        >
+                            Score
+                        </th>
                         <th class="px-4 py-3 font-medium">Activity</th>
                         <th class="w-12 px-4 py-3">
                             <span class="sr-only">Actions</span>
@@ -316,7 +336,10 @@ const flagged = (count: number) => count >= props.alertAt;
                                     : '—'
                             }}
                         </td>
-                        <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                        <td
+                            v-if="showScores"
+                            class="px-4 py-2.5 text-right whitespace-nowrap"
+                        >
                             <template v-if="row.score !== null">
                                 <span class="font-medium tabular-nums">
                                     {{ marks(row.score) }}
