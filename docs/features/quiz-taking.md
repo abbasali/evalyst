@@ -33,6 +33,7 @@ Students join with a code, answer one question per screen against a timer enforc
 
 - **Instructor "Allow resume"** (on the live monitor) clears the token. The next join from any browser issues a new cookie and resumes. This is written to the audit log.
 - **Instructor "Reset attempt"** deletes the attempt and its answers, with a confirmation that says data will be lost. The student can then start fresh. This is written to the audit log.
+- **Instructor "Allow late start"** (roster quizzes only) lets one student join and start after the closing time, until a time the instructor picks. They still get the full duration. It's stored in `participants.deadline_override_at`, can be removed, and is written to the audit log. Until the student starts, results can't be released with correct answers (automatic release waits) and the quiz can't be archived; it can't be granted once results are released. Reset attempt also works after closing while the student has one.
 
 ## Start: `StartAttempt`
 
@@ -91,7 +92,7 @@ Then it redirects to question 1.
 
 - `usePoll` every 5s. The header shows counts: Not started, In progress, Submitted, Grading/Graded.
 - **Table:** roll number, name, status, answered/total, time left (in progress), submitted at, focus-lost count (highlighted when 3 or more), and a link to the attempt detail.
-- **Row actions:** Allow resume (shared mode, in progress), Reset attempt, Force submit.
+- **Row actions:** Allow resume (shared mode, in progress), Allow late start (roster mode, not in progress), Reset attempt, Force submit.
 - Roster mode lists everyone on the roster. Shared mode lists only students who have joined.
 
 ## Edge cases

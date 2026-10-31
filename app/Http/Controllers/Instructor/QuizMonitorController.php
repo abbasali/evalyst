@@ -18,6 +18,7 @@ use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -58,7 +59,7 @@ class QuizMonitorController extends Controller
             ->get();
 
         // Students taking it now first, then submitted, then not started; by roll number within each.
-        $rows = $participants->map(fn (Participant $participant) => $this->row($participant, $items))
+        $rows = $participants->map(fn (Participant $participant) => $this->row($quiz, $participant, $items))
             ->sortBy([
                 fn (array $a, array $b) => array_search($a['status'], self::STATUS_ORDER, true) <=> array_search($b['status'], self::STATUS_ORDER, true),
                 fn (array $a, array $b) => strnatcmp($a['roll_number'], $b['roll_number']),
@@ -76,6 +77,7 @@ class QuizMonitorController extends Controller
             'serverNow' => now()->toIso8601String(),
             'alertAt' => self::ALERT_AT,
             'canAllowResume' => $quiz->access_mode === AccessMode::SharedCode,
+            'canAllowLateStart' => $quiz->access_mode === AccessMode::Roster,
         ]);
     }
 
@@ -97,6 +99,33 @@ class QuizMonitorController extends Controller
         ]));
     }
 
+    public function allowLateStart(Team $currentTeam, Assessment $quiz, Participant $participant, Request $request, ManageAttempt $manage): RedirectResponse
+    {
+        if ($quiz->access_mode !== AccessMode::Roster) {
+            return $this->failed(__('Late starts are only for roster quizzes.'));
+        }
+
+        $data = $request->validate(['until' => ['nullable', 'date']]);
+        $until = ! empty($data['until']) ? Date::parse($data['until'], $currentTeam->timezone)->utc() : null;
+
+        if ($until !== null && $until->lte(max(now(), $quiz->closes_at))) {
+            throw ValidationException::withMessages(['until' => __('Pick a time after the quiz closes (:time) and in the future.', [
+                'time' => $quiz->closes_at->copy()->setTimezone($currentTeam->timezone)->format('j M, g:i A'),
+            ])]);
+        }
+
+        // Released results (and correct answers) would reach the student before they start.
+        if ($until !== null && $quiz->resultsReleased()) {
+            return $this->failed(__('Results are already released, so :name could see them before starting. Hide the results first.', ['name' => $participant->student->name]));
+        }
+
+        $manage->allowLateStart($request->user(), $participant, $until);
+
+        return $this->done($until === null
+            ? __(':name can no longer start late.', ['name' => $participant->student->name])
+            : __(':name can start until :time.', ['name' => $participant->student->name, 'time' => $until->copy()->setTimezone($currentTeam->timezone)->format('j M, g:i A')]));
+    }
+
     public function reset(Team $currentTeam, Assessment $quiz, Participant $participant, Request $request, ManageAttempt $manage): RedirectResponse
     {
         if ($participant->attempt === null) {
@@ -104,8 +133,8 @@ class QuizMonitorController extends Controller
         }
 
         // After closing, a reset would delete the submission and the student couldn't start again.
-        if (! $quiz->isOpen()) {
-            return $this->failed(__('The quiz isn\'t open, so :name couldn\'t start again. Extend the closing time first.', ['name' => $participant->student->name]));
+        if (! $quiz->isOpenFor($participant)) {
+            return $this->failed(__('The quiz isn\'t open, so :name couldn\'t start again. Allow a late start or extend the closing time first.', ['name' => $participant->student->name]));
         }
 
         $request->validate(['roll_number' => ['required', 'string']]);
@@ -132,10 +161,11 @@ class QuizMonitorController extends Controller
      * @param  Collection<int, AssessmentQuestion>  $items
      * @return array<string, mixed>
      */
-    private function row(Participant $participant, Collection $items): array
+    private function row(Assessment $quiz, Participant $participant, Collection $items): array
     {
         /** @var Attempt|null $attempt */
         $attempt = $participant->attempt;
+        $startBy = $quiz->startDeadlineFor($participant);
 
         return [
             'id' => $participant->id,
@@ -156,6 +186,7 @@ class QuizMonitorController extends Controller
             'focus_lost' => $attempt->focus_lost_count ?? 0,
             'pastes' => (int) ($attempt?->getAttribute('paste_count') ?? 0),
             'fullscreen_exits' => (int) ($attempt?->getAttribute('fullscreen_exit_count') ?? 0),
+            'late_start_until' => $startBy->gt($quiz->closes_at) && $startBy->isFuture() ? $startBy->toIso8601String() : null,
             'resume_allowed_until' => $attempt?->resume_override_until?->isFuture() ? $attempt->resume_override_until->toIso8601String() : null,
             ...$this->liveScore($attempt, $items),
         ];

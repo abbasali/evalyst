@@ -9,6 +9,7 @@ use App\Enums\AssessmentType;
 use App\Enums\LatePolicy;
 use App\Enums\PenaltyType;
 use App\Enums\ReleaseMode;
+use Carbon\CarbonInterface;
 use Database\Factories\AssessmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -191,6 +192,37 @@ class Assessment extends Model
             && now()->lt($this->closes_at);
     }
 
+    /**
+     * Open for this student: the course-wide window, or a roster quiz's late-start override.
+     */
+    public function isOpenFor(?Participant $participant): bool
+    {
+        return $this->isPublished()
+            && ($this->opens_at === null || now()->gte($this->opens_at))
+            && now()->lt($this->startDeadlineFor($participant));
+    }
+
+    /**
+     * The last moment this student may start: the closing time, or a later late-start override.
+     */
+    public function startDeadlineFor(?Participant $participant): CarbonInterface
+    {
+        $override = $this->isQuiz() && $this->access_mode === AccessMode::Roster ? $participant?->deadline_override_at : null;
+
+        return $override !== null && $override->gt($this->closes_at) ? $override : $this->closes_at;
+    }
+
+    /**
+     * Roster quiz students allowed to start late who haven't started yet. Results and archiving wait for them.
+     */
+    public function hasPendingLateStarts(): bool
+    {
+        return $this->isQuiz() && $this->access_mode === AccessMode::Roster && $this->participants()
+            ->where('deadline_override_at', '>', max(now(), $this->closes_at))
+            ->whereDoesntHave('attempt')
+            ->exists();
+    }
+
     public function isClosed(): bool
     {
         return $this->isPublished() && now()->gte($this->closes_at);
@@ -233,7 +265,7 @@ class Assessment extends Model
     }
 
     /**
-     * Automatic mode: closed, nobody still mid-attempt, and (assignments) every personal deadline passed.
+     * Automatic mode: closed, nobody still mid-attempt or due to start late, and (assignments) every personal deadline passed.
      */
     public function autoReleaseDue(): bool
     {
@@ -246,6 +278,10 @@ class Assessment extends Model
             $latest = $this->participants()->max('deadline_override_at');
 
             return $latest === null || now()->gte($latest);
+        }
+
+        if ($this->hasPendingLateStarts()) {
+            return false;
         }
 
         // Time-based, so an abandoned attempt the expiry job hasn't swept yet doesn't block release.

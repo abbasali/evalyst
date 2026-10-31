@@ -108,6 +108,12 @@ class QuizResultsController extends Controller
 
                 return back();
             }
+
+            if ($quiz->hasPendingLateStarts()) {
+                Inertia::flash('toast', ['type' => 'error', 'message' => __('Some students are allowed to start late and haven\'t started yet. Releasing would show them the correct answers. Wait until they finish, or remove their late starts on the Monitor tab.')]);
+
+                return back();
+            }
         }
 
         $release->release($request->user(), $quiz);

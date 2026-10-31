@@ -65,6 +65,10 @@ class AssessmentPolicy
         $stillWorking = $assessment->isQuiz()
             && $assessment->attempts()->where('attempts.status', AttemptStatus::InProgress)->exists();
 
+        if ($assessment->hasPendingLateStarts()) {
+            return Response::deny(__('Some students are allowed to start late and haven\'t started yet. Archive it after they finish, or remove their late starts on the Monitor tab.'));
+        }
+
         return ($assessment->isClosed() && ! $stillWorking) || ! $assessment->hasAttempts()
             ? Response::allow()
             : Response::deny(__('Students are still working on this :noun. Archive it after it closes.', ['noun' => $assessment->noun()]));

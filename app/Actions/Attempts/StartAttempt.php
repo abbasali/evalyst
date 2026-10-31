@@ -34,7 +34,7 @@ class StartAttempt
                     return [$existing, null];
                 }
 
-                if (! $assessment->isOpen()) {
+                if (! $assessment->isOpenFor($participant)) {
                     throw ValidationException::withMessages(['start' => __('This quiz isn\'t open right now.')]);
                 }
 

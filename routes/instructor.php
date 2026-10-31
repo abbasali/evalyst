@@ -65,6 +65,7 @@ Route::prefix('quizzes/{quiz}')->name('quizzes.')->group(function () {
     Route::get('analytics', [QuizAnalyticsController::class, 'show'])->name('analytics');
     Route::get('preview', [QuizPreviewController::class, 'show'])->name('preview');
     Route::post('participants/{participant}/allow-resume', [QuizMonitorController::class, 'allowResume'])->name('participants.allow-resume');
+    Route::post('participants/{participant}/allow-late-start', [QuizMonitorController::class, 'allowLateStart'])->name('participants.allow-late-start');
     Route::post('participants/{participant}/reset-attempt', [QuizMonitorController::class, 'reset'])->name('participants.reset');
     Route::post('participants/{participant}/force-submit', [QuizMonitorController::class, 'forceSubmit'])->name('participants.force-submit');
 
