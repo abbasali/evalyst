@@ -123,6 +123,7 @@ it('keeps monitor actions inside the course', function (string $method, string $
     $this->{$method}(route($route, [$foreign->assessment->team, $foreign->assessment, $foreign]))->assertForbidden();
 })->with([
     ['post', 'quizzes.participants.allow-resume'],
+    ['post', 'quizzes.participants.allow-late-start'],
     ['post', 'quizzes.participants.reset'],
     ['post', 'quizzes.participants.force-submit'],
 ]);
@@ -202,4 +203,112 @@ it('counts only settled grades for a submitted attempt that is still grading', f
 
     $this->get(route('quizzes.monitor', [$team, $quiz]))
         ->assertInertia(fn ($page) => $page->where('rows.0.score', 1)->where('rows.0.score_state', 'grading'));
+});
+
+it('lets one roster student join and start after the quiz closed', function () {
+    [$team, $quiz] = monitoredQuiz();
+    $quiz->update(['closes_at' => now()->subMinute()]);
+    $late = Participant::factory()->for($quiz)->withCode()->create();
+    $other = Participant::factory()->for($quiz)->withCode()->create();
+    $until = now()->setTimezone($quiz->team->timezone)->addHour()->startOfMinute();
+
+    $this->post(route('quizzes.participants.allow-late-start', [$team, $quiz, $late]), ['until' => $until->format('Y-m-d\TH:i')])->assertRedirect();
+    expect($late->fresh()->deadline_override_at->equalTo($until))->toBeTrue()
+        ->and(AuditLog::where('action', 'attempt.allow_late_start')->count())->toBe(1);
+
+    auth()->logout();
+    $this->post(route('student.join.store'), ['code' => $other->access_code])->assertSessionHasErrors(['code' => 'This quiz has closed.']);
+    $this->post(route('student.join.store'), ['code' => $late->access_code])->assertSessionHasNoErrors();
+    $this->get(route('student.landing', $quiz->public_id))
+        ->assertInertia(fn ($page) => $page->where('state', 'not_started')->where('quiz.closes_at', $until->utc()->toIso8601String()));
+    $this->post(route('student.start', $quiz->public_id))->assertRedirect();
+
+    expect($late->attempt()->exists())->toBeTrue();
+});
+
+it('stops a late start once the override passes', function () {
+    [, $quiz] = monitoredQuiz();
+    $quiz->update(['closes_at' => now()->subMinute()]);
+    $participant = Participant::factory()->for($quiz)->withCode()->create(['deadline_override_at' => now()->addMinutes(5)]);
+
+    $this->travel(6)->minutes();
+    auth()->logout();
+    studentSession($participant);
+
+    $this->get(route('student.landing', $quiz->public_id))->assertInertia(fn ($page) => $page->where('state', 'closed'));
+    $this->post(route('student.start', $quiz->public_id))->assertSessionHasErrors('start');
+});
+
+it('only allows late starts after closing time on roster quizzes', function () {
+    [$team, $quiz] = monitoredQuiz();
+    $participant = Participant::factory()->for($quiz)->withCode()->create();
+    $local = fn ($time) => $time->setTimezone($quiz->team->timezone)->format('Y-m-d\TH:i');
+
+    // Before the quiz closes (it is still open for a while).
+    $this->post(route('quizzes.participants.allow-late-start', [$team, $quiz, $participant]), ['until' => $local($quiz->closes_at->subMinute())])
+        ->assertSessionHasErrors('until');
+
+    $shared = Assessment::factory()->for($team)->open()->create(['access_mode' => 'shared_code', 'shared_code' => 'ACDEFH']);
+    $joined = Participant::factory()->for($shared)->create();
+    $this->post(route('quizzes.participants.allow-late-start', [$team, $shared, $joined]), ['until' => $local($shared->closes_at->addHour())])
+        ->assertRedirect()->assertInertiaFlash('toast.type', 'error');
+
+    expect($participant->fresh()->deadline_override_at)->toBeNull()
+        ->and($joined->fresh()->deadline_override_at)->toBeNull();
+});
+
+it('removes a late start', function () {
+    [$team, $quiz] = monitoredQuiz();
+    $participant = Participant::factory()->for($quiz)->withCode()->create(['deadline_override_at' => $quiz->closes_at->addHour()]);
+
+    $this->post(route('quizzes.participants.allow-late-start', [$team, $quiz, $participant]), ['until' => null])
+        ->assertRedirect()->assertInertiaFlash('toast.type', 'success');
+
+    expect($participant->fresh()->deadline_override_at)->toBeNull()
+        ->and(AuditLog::where('action', 'attempt.allow_late_start')->sole()->changes['after']['deadline_override_at'])->toBeNull();
+});
+
+it('refuses a late start once results are released', function () {
+    [$team, $quiz] = monitoredQuiz();
+    $quiz->update(['closes_at' => now()->subMinute(), 'results_released_at' => now()]);
+    $participant = Participant::factory()->for($quiz)->withCode()->create();
+
+    $this->post(route('quizzes.participants.allow-late-start', [$team, $quiz, $participant]), ['until' => now()->setTimezone($quiz->team->timezone)->addHour()->format('Y-m-d\TH:i')])
+        ->assertInertiaFlash('toast.type', 'error');
+
+    expect($participant->fresh()->deadline_override_at)->toBeNull();
+});
+
+it('blocks releasing answers and archiving while a late student has not started', function () {
+    [$team, $quiz] = monitoredQuiz();
+    $quiz->update(['closes_at' => now()->subMinute(), 'show_answers_after_release' => true]);
+    Participant::factory()->for($quiz)->withCode()->create(['deadline_override_at' => now()->addHour()]);
+
+    $this->post(route('quizzes.results.release', [$team, $quiz]))->assertInertiaFlash('toast.type', 'error');
+    $this->post(route('quizzes.archive', [$team, $quiz]));
+
+    expect($quiz->fresh()->results_released_at)->toBeNull()
+        ->and($quiz->fresh()->isArchived())->toBeFalse();
+});
+
+it('resets an attempt after closing only when the student may start late', function () {
+    [$team, $quiz] = monitoredQuiz();
+    $late = Participant::factory()->for($quiz)->withCode()->create(['deadline_override_at' => now()->addHour()]);
+    $other = Participant::factory()->for($quiz)->withCode()->create();
+    Attempt::factory()->for($late)->submitted()->create();
+    Attempt::factory()->for($other)->submitted()->create();
+    $quiz->update(['closes_at' => now()->subMinute()]);
+
+    $this->post(route('quizzes.participants.reset', [$team, $quiz, $late]), ['roll_number' => $late->student->roll_number])
+        ->assertInertiaFlash('toast.type', 'success');
+    $this->post(route('quizzes.participants.reset', [$team, $quiz, $other]), ['roll_number' => $other->student->roll_number])
+        ->assertInertiaFlash('toast.type', 'error');
+
+    expect($late->attempt()->exists())->toBeFalse()
+        ->and($other->attempt()->exists())->toBeTrue();
+
+    auth()->logout();
+    studentSession($late);
+    $this->post(route('student.start', $quiz->public_id))->assertSessionHasNoErrors();
+    expect($late->attempt()->exists())->toBeTrue();
 });

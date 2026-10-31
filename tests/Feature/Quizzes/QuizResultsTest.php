@@ -6,6 +6,7 @@ use App\Enums\AttemptEventType;
 use App\Enums\AttemptStatus;
 use App\Enums\ReleaseMode;
 use App\Jobs\GradeAttempt;
+use App\Models\Assessment;
 use App\Models\Attempt;
 use App\Models\AuditLog;
 use App\Models\Participant;
@@ -121,5 +122,22 @@ test('automatic release does not wait for an abandoned attempt the expiry job ha
     expect($quiz->autoReleaseDue())->toBeFalse();
 
     $this->travel(17)->minutes();
+    expect($quiz->autoReleaseDue())->toBeTrue();
+});
+
+test('automatic release waits for a late-start override', function () {
+    [, $team] = actingAsInstructor();
+    $quiz = Assessment::factory()->for($team)->published()->rosterMode()->create(['closes_at' => now()->subMinute(), 'release_mode' => ReleaseMode::Automatic])->refresh();
+    $late = Participant::factory()->for($quiz)->withCode()->create(['deadline_override_at' => now()->addHour()]);
+
+    expect($quiz->autoReleaseDue())->toBeFalse();
+
+    // Once the late student has taken it, only their attempt matters.
+    Attempt::factory()->for($late)->submitted()->create();
+    expect($quiz->autoReleaseDue())->toBeTrue();
+
+    $late->attempt()->delete();
+
+    $this->travel(61)->minutes();
     expect($quiz->autoReleaseDue())->toBeTrue();
 });

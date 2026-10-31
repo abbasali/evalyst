@@ -6,6 +6,7 @@ use App\Actions\Audit\RecordAudit;
 use App\Enums\AttemptEventType;
 use App\Models\Participant;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -29,6 +30,21 @@ class ManageAttempt
         $attempt->events()->create(['type' => AttemptEventType::ResumeAllowed, 'occurred_at' => now()]);
 
         $this->audit->handle($user, $participant, 'attempt.allow_resume', ['after' => ['resume_override_until' => $until->toIso8601String()]]);
+    }
+
+    /**
+     * Roster quizzes: let one student start after the closing time, until `$until` (null clears it).
+     */
+    public function allowLateStart(User $user, Participant $participant, ?CarbonInterface $until): void
+    {
+        $before = $participant->deadline_override_at?->toIso8601String();
+
+        $participant->update(['deadline_override_at' => $until]);
+
+        $this->audit->handle($user, $participant, 'attempt.allow_late_start', [
+            'before' => ['deadline_override_at' => $before],
+            'after' => ['deadline_override_at' => $until?->toIso8601String()],
+        ]);
     }
 
     /**

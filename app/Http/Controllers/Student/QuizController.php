@@ -47,7 +47,7 @@ class QuizController extends Controller
                 'questions_count' => $assessment->assessmentQuestions()->count(),
                 'max_score' => $assessment->maxScore(),
                 'opens_at' => $assessment->opens_at?->toIso8601String(),
-                'closes_at' => $assessment->closes_at->toIso8601String(),
+                'closes_at' => $assessment->startDeadlineFor($participant)->toIso8601String(),
                 'timezone' => $assessment->team->timezone,
                 'track_focus' => $assessment->track_focus,
                 'one_way_navigation' => $assessment->one_way_navigation,
@@ -122,7 +122,7 @@ class QuizController extends Controller
 
         return match (true) {
             $attempt === null => match (true) {
-                $assessment->isOpen() => 'not_started',
+                $assessment->isOpenFor($participant) => 'not_started',
                 $assessment->isUpcoming() => 'upcoming',
                 default => 'closed',
             },

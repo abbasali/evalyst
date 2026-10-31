@@ -89,7 +89,7 @@ class JoinAssessment
             ]),
             // A student who already started can still come back to see their submission.
             // Assignments stay reachable: late submissions, overrides and history are explained on the page.
-            $assessment->isQuiz() && $assessment->isClosed() && ! $participant?->attempt()->exists() => __('This quiz has closed.'),
+            $assessment->isQuiz() && $assessment->isClosed() && ! $assessment->isOpenFor($participant) && ! $participant?->attempt()->exists() => __('This quiz has closed.'),
             default => null,
         };
 

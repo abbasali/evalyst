@@ -3,6 +3,7 @@ import { Head, router, useForm, usePoll } from '@inertiajs/vue3';
 import {
     AlertTriangle,
     Clipboard,
+    Clock,
     Eye,
     EyeOff,
     Maximize,
@@ -41,7 +42,12 @@ import { formatInCourseTz } from '@/lib/datetime';
 import { marks } from '@/lib/grading';
 import { cn } from '@/lib/utils';
 import { index } from '@/routes/quizzes';
-import { allowResume, forceSubmit, reset } from '@/routes/quizzes/participants';
+import {
+    allowLateStart,
+    allowResume,
+    forceSubmit,
+    reset,
+} from '@/routes/quizzes/participants';
 import type { QuizShellProps, Team } from '@/types';
 
 type Row = {
@@ -62,6 +68,7 @@ type Row = {
     focus_lost: number;
     pastes: number;
     fullscreen_exits: number;
+    late_start_until: string | null;
     resume_allowed_until: string | null;
 };
 
@@ -76,6 +83,7 @@ const props = defineProps<
         serverNow: string;
         alertAt: number;
         canAllowResume: boolean;
+        canAllowLateStart: boolean;
     }
 >();
 
@@ -95,7 +103,8 @@ const live = computed(
     () =>
         props.quiz.state === 'open' ||
         props.quiz.state === 'upcoming' ||
-        props.summary.in_progress > 0,
+        props.summary.in_progress > 0 ||
+        props.rows.some((row) => row.late_start_until),
 );
 const poll = usePoll(
     5000,
@@ -191,6 +200,30 @@ function doReset() {
         preserveScroll: true,
         onSuccess: () => (resetOpen.value = false),
     });
+}
+
+const lateStarting = ref<Row | null>(null);
+const lateStartOpen = ref(false);
+const lateStartForm = useForm({ until: '' });
+
+function askLateStart(row: Row) {
+    lateStarting.value = row;
+    lateStartForm.reset();
+    lateStartForm.clearErrors();
+    lateStartOpen.value = true;
+}
+
+function saveLateStart(clear = false) {
+    if (!lateStarting.value) {
+        return;
+    }
+
+    lateStartForm
+        .transform((data) => (clear ? { until: null } : data))
+        .post(allowLateStart.url(args(lateStarting.value)), {
+            preserveScroll: true,
+            onSuccess: () => (lateStartOpen.value = false),
+        });
 }
 
 const flagged = (count: number) => count >= props.alertAt;
@@ -316,6 +349,21 @@ const showScores = ref(false);
                             >
                                 Resume allowed
                             </p>
+                            <p
+                                v-if="
+                                    row.late_start_until &&
+                                    row.status !== 'in_progress'
+                                "
+                                class="mt-1 text-xs text-sky-700 dark:text-sky-400"
+                            >
+                                Can start until
+                                {{
+                                    formatInCourseTz(row.late_start_until, {
+                                        dateStyle: 'short',
+                                        timeStyle: 'short',
+                                    })
+                                }}
+                            </p>
                         </td>
                         <td class="px-4 py-2.5 tabular-nums">
                             <template v-if="row.total">
@@ -425,7 +473,12 @@ const showScores = ref(false);
                             </div>
                         </td>
                         <td class="px-2 py-2 text-right">
-                            <DropdownMenu v-if="row.status !== 'not_started'">
+                            <DropdownMenu
+                                v-if="
+                                    row.status !== 'not_started' ||
+                                    canAllowLateStart
+                                "
+                            >
                                 <DropdownMenuTrigger as-child>
                                     <Button
                                         variant="ghost"
@@ -454,6 +507,18 @@ const showScores = ref(false);
                                         <Send /> Submit now
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
+                                        v-if="
+                                            canAllowLateStart &&
+                                            (row.status === 'not_started' ||
+                                                (row.status === 'submitted' &&
+                                                    quiz.state === 'closed'))
+                                        "
+                                        @click="askLateStart(row)"
+                                    >
+                                        <Clock /> Allow late start
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        v-if="row.status !== 'not_started'"
                                         variant="destructive"
                                         @click="askReset(row)"
                                     >
@@ -533,6 +598,72 @@ const showScores = ref(false);
                         >
                             <Spinner v-if="resetForm.processing" />
                             Reset attempt
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="lateStartOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle
+                        >Allow {{ lateStarting?.name }} to start
+                        late?</DialogTitle
+                    >
+                    <DialogDescription>
+                        They can start the quiz until this time, even after it
+                        closes, and get the full duration.
+                        <template v-if="lateStarting?.status === 'submitted'">
+                            They've already submitted, so reset their attempt
+                            too if they should take it again.
+                        </template>
+                    </DialogDescription>
+                </DialogHeader>
+                <form class="space-y-2" @submit.prevent="saveLateStart()">
+                    <Label for="late-start-until">
+                        Can start until (course time)
+                    </Label>
+                    <Input
+                        id="late-start-until"
+                        v-model="lateStartForm.until"
+                        type="datetime-local"
+                        required
+                    />
+                    <InputError :message="lateStartForm.errors.until" />
+                    <p
+                        v-if="lateStarting?.late_start_until"
+                        class="text-xs text-muted-foreground"
+                    >
+                        Currently until
+                        {{ formatInCourseTz(lateStarting.late_start_until) }}.
+                    </p>
+                    <DialogFooter class="gap-2 pt-2">
+                        <Button
+                            v-if="lateStarting?.late_start_until"
+                            type="button"
+                            variant="ghost"
+                            class="sm:mr-auto"
+                            :disabled="lateStartForm.processing"
+                            @click="saveLateStart(true)"
+                        >
+                            Remove
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            @click="lateStartOpen = false"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            :disabled="
+                                lateStartForm.processing || !lateStartForm.until
+                            "
+                        >
+                            <Spinner v-if="lateStartForm.processing" />
+                            Allow late start
                         </Button>
                     </DialogFooter>
                 </form>
